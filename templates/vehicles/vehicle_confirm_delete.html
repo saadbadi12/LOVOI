@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Supprimer Véhicule - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Supprimer le Véhicule</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <p>Êtes-vous sûr de vouloir supprimer <strong>{{ vehicule }}</strong> ?</p>
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+                <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-secondary">Annuler</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

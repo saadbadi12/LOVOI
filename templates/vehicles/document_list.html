@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Documents - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Documents des Véhicules</h1>
+    <div class="mb-3">
+        <a href="?filter=expired" class="btn btn-danger btn-sm">Expirés</a>
+        <a href="?filter=expiring" class="btn btn-warning btn-sm">Expirent bientôt</a>
+        <a href="{% url 'vehicles:document_list' %}" class="btn btn-secondary btn-sm">Tous</a>
+    </div>
+
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>Véhicule</th>
+                <th>Type</th>
+                <th>Numéro</th>
+                <th>Expiration</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+            <tr class="{% if doc.is_expired %}table-danger{% elif doc.expires_soon %}table-warning{% endif %}">
+                <td>{{ doc.vehicule }}</td>
+                <td>{{ doc.get_type_display }}</td>
+                <td>{{ doc.numero }}</td>
+                <td>{{ doc.date_expiration }}</td>
+                <td><a href="{% url 'vehicles:document_update' doc.pk %}" class="btn btn-sm btn-outline-primary">Modifier</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-center">Aucun document.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

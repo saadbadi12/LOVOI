@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}Laisser un Avis - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Laisser un Avis pour {{ vehicule }}</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label>Note</label>
+                    <select name="note" class="form-select" required>
+                        <option value="5">★★★★★ - Excellent</option>
+                        <option value="4">★★★★☆ - Très bien</option>
+                        <option value="3">★★★☆☆ - Bien</option>
+                        <option value="2">★★☆☆☆ - Moyen</option>
+                        <option value="1">★☆☆☆☆ - Mauvais</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label>Commentaire</label>
+                    <textarea name="commentaire" class="form-control" rows="4" placeholder="Partagez votre expérience..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Publier l'Avis</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

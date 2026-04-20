@@ -1,0 +1,215 @@
+{% extends 'base.html' %}
+
+{% block extra_css %}
+<style>
+.auth-page {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
+    display: flex;
+    align-items: center;
+    padding: 2rem 0;
+}
+
+.auth-card-modern {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(30px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 30px;
+    overflow: hidden;
+    max-width: 450px;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.auth-header-modern {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a5a 100%);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.auth-header-modern::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
+}
+
+.auth-header-modern h3 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 700;
+    margin: 0;
+    color: white;
+}
+
+.auth-header-modern p {
+    opacity: 0.9;
+    margin: 0.5rem 0 0;
+    color: rgba(255,255,255,0.8);
+}
+
+.auth-body-modern {
+    padding: 2.5rem 2rem;
+}
+
+.form-control-modern {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.form-control-modern:focus {
+    background: rgba(255,255,255,0.12);
+    border-color: #ff6b6b;
+    box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
+    outline: none;
+    color: white;
+}
+
+.form-control-modern::placeholder {
+    color: rgba(255,255,255,0.5);
+}
+
+.form-label-modern {
+    color: rgba(255,255,255,0.8);
+    font-weight: 500;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+}
+
+.btn-primary-modern {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    width: 100%;
+    transition: all 0.4s ease;
+    box-shadow: 0 10px 30px rgba(255,107,107,0.3);
+}
+
+.btn-primary-modern:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 40px rgba(255,107,107,0.4);
+    color: white;
+}
+
+.btn-outline-modern {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.3);
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    color: white;
+    width: 100%;
+    transition: all 0.4s ease;
+}
+
+.btn-outline-modern:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.5);
+    color: white;
+    transform: translateY(-2px);
+}
+
+.auth-footer-modern {
+    text-align: center;
+    padding: 1.5rem 2rem 2rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.auth-footer-modern a {
+    color: #ff6b6b;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.auth-footer-modern a:hover {
+    color: #ffe66d;
+}
+
+.alert-modern {
+    background: rgba(255,107,107,0.2);
+    border: 1px solid rgba(255,107,107,0.4);
+    border-radius: 12px;
+    padding: 1rem;
+    color: white;
+    text-align: center;
+}
+
+.input-icon {
+    position: relative;
+}
+
+.input-icon i {
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: rgba(255,255,255,0.5);
+}
+
+.input-icon .form-control {
+    padding-left: 50px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="container">
+        <div class="auth-card-modern shadow-lg">
+            <div class="auth-header-modern">
+                <h3><i class="fas fa-car me-2"></i> LOVOI</h3>
+                <p>Connectez-vous à votre compte</p>
+            </div>
+            <div class="auth-body-modern">
+                {% if messages %}
+                    {% for message in messages %}
+                    <div class="alert-modern mb-4">
+                        <i class="fas fa-exclamation-circle me-2"></i>{{ message }}
+                    </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="form-label-modern">Nom d'utilisateur</label>
+                        <div class="input-icon">
+                            <i class="fas fa-user"></i>
+                            <input type="text" name="username" class="form-control form-control-modern" placeholder="Votre identifiant" required autofocus>
+                        </div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label-modern">Mot de passe</label>
+                        <div class="input-icon">
+                            <i class="fas fa-lock"></i>
+                            <input type="password" name="password" class="form-control form-control-modern" placeholder="••••••••" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary-modern">
+                        <i class="fas fa-sign-in-alt me-2"></i> Se connecter
+                    </button>
+                </form>
+            </div>
+            <div class="auth-footer-modern">
+                <p class="text-white-50 mb-3">Pas encore de compte ?</p>
+                <a href="{% url 'accounts:register' %}" class="btn btn-outline-modern">
+                    <i class="fas fa-user-plus me-2"></i> Créer un compte
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

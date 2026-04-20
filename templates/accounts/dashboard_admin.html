@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+{% block title %}Administration - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Tableau de Bord Administrateur</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h2>{{ total_vehicules }}</h2>
+                    <p>Véhicules</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h2>{{ disponibles }}</h2>
+                    <p>Disponibles</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-warning text-white">
+                <div class="card-body">
+                    <h2>{{ reservations_en_cours }}</h2>
+                    <p>En cours</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center bg-info text-white">
+                <div class="card-body">
+                    <h2>{{ total_clients }}</h2>
+                    <p>Clients</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Dernières Réservations</h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Client</th>
+                                <th>Véhicule</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for res in recent_reservations %}
+                            <tr>
+                                <td>{{ res.client }}</td>
+                                <td>{{ res.vehicule }}</td>
+                                <td>{{ res.get_statut_reservation_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Actions Rapides</h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'vehicles:vehicle_create' %}" class="btn btn-primary w-100 mb-2">+ Ajouter Véhicule</a>
+                    <a href="{% url 'accounts:user_create' %}" class="btn btn-secondary w-100 mb-2">+ Ajouter Utilisateur</a>
+                    <a href="{% url 'reservations:reservation_list' %}" class="btn btn-info w-100 mb-2">Gérer Réservations</a>
+                    <a href="{% url 'vehicles:document_list' %}" class="btn btn-warning w-100">Documents Expirants</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

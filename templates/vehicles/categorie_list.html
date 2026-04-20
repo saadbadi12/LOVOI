@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Catégories - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Catégories</h1>
+    <a href="{% url 'vehicles:categorie_create' %}" class="btn btn-primary mt-3">+ Ajouter</a>
+
+    <div class="row mt-4">
+        {% for cat in categories %}
+        <div class="col-md-3 mb-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h5>{{ cat.type }}</h5>
+                    <p class="text-muted">{{ cat.description|truncatewords:5 }}</p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

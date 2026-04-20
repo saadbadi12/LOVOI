@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+{% block title %}Réservation {{ reservation.id }} - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Réservation #{{ reservation.id }}</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Détails de la Réservation</span>
+                    <span class="badge bg-{% if reservation.statut_reservation == 'TERMINEE' %}success{% elif reservation.statut_reservation == 'EN_COURS' %}primary{% elif reservation.statut_reservation == 'ANNULEE' %}danger{% elif reservation.statut_reservation == 'CONFIRMEE' %}info{% else %}warning{% endif %} fs-6">
+                        {{ reservation.get_statut_reservation_display }}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Véhicule:</strong> {{ reservation.vehicule }}</p>
+                            <p><strong>Client:</strong> {{ reservation.client.get_full_name }}</p>
+                            <p><strong>Date de réservation:</strong> {{ reservation.date_reservation|date:"d/m/Y H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Date début:</strong> {{ reservation.date_debut }}</p>
+                            <p><strong>Date fin:</strong> {{ reservation.date_fin }}</p>
+                            <p><strong>Durée:</strong> {{ reservation.nombre_jours }} jour(s)</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Lieu de départ:</strong> {{ reservation.lieu_depart }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Lieu de retour:</strong> {{ reservation.lieu_retour }}</p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="fw-bold">Montant Total: {{ reservation.montant_total }} MAD</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p>Caution versée: {% if reservation.caution_versee %}Oui{% else %}Non{% endif %}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {% if reservation.paiements.all %}
+            <div class="card mt-3">
+                <div class="card-header">Paiements</div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Montant</th>
+                                <th>Mode</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in reservation.paiements.all %}
+                            <tr>
+                                <td>{{ p.get_type_display }}</td>
+                                <td>{{ p.amount }} MAD</td>
+                                <td>{{ p.get_mode_display }}</td>
+                                <td>{{ p.get_statut_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Actions</div>
+                <div class="card-body">
+                    {% if user.is_admin %}
+                        {% if reservation.statut_reservation == 'EN_ATTENTE' %}
+                            <a href="{% url 'reservations:reservation_confirm' reservation.pk %}" class="btn btn-success w-100 mb-2">Confirmer</a>
+                        {% endif %}
+                        {% if reservation.statut_reservation == 'CONFIRMEE' %}
+                            <a href="{% url 'reservations:reservation_start' reservation.pk %}" class="btn btn-primary w-100 mb-2">Démarrer Location</a>
+                        {% endif %}
+                        {% if reservation.statut_reservation == 'EN_COURS' %}
+                            <a href="{% url 'reservations:reservation_end' reservation.pk %}" class="btn btn-info w-100 mb-2">Terminer Location</a>
+                        {% endif %}
+                        {% if reservation.statut_reservation in 'EN_ATTENTE,CONFIRMEE' %}
+                            <a href="{% url 'reservations:reservation_cancel' reservation.pk %}" class="btn btn-danger w-100 mb-2">Annuler</a>
+                        {% endif %}
+                        <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}" class="btn btn-secondary w-100 mb-2">État des Lieux</a>
+                        <a href="{% url 'reservations:paiement_create' reservation.pk %}" class="btn btn-success w-100">Ajouter Paiement</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Liste des Utilisateurs - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center">
+        <h1>Gestion des Utilisateurs</h1>
+        <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">+ Ajouter</a>
+    </div>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nom</th>
+                <th>Email</th>
+                <th>Rôle</th>
+                <th>Inscrit le</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in page_obj %}
+            <tr>
+                <td>{{ user.id }}</td>
+                <td>{{ user.get_full_name|default:user.username }}</td>
+                <td>{{ user.email }}</td>
+                <td><span class="badge bg-{% if user.is_admin %}danger{% elif user.is_employe %}info{% elif user.is_technicien %}warning{% elif user.is_livreur %}secondary{% else %}success{% endif %}">{{ user.get_role_display }}</span></td>
+                <td>{{ user.date_inscription|date:"d/m/Y" }}</td>
+                <td><a href="#" class="btn btn-sm btn-outline-primary">Modifier</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if page_obj.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivante</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

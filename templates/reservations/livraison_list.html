@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Livraisons - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Livraisons</h1>
+    <a href="{% url 'reservations:livraison_create' %}" class="btn btn-primary mt-3">+ Planifier Livraison</a>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Réservation</th>
+                <th>Livreur</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for l in livraisons %}
+            <tr>
+                <td>{{ l.id }}</td>
+                <td>{{ l.reservation.id }}</td>
+                <td>{{ l.livreur|default:"-" }}</td>
+                <td>{{ l.get_type_display }}</td>
+                <td>{{ l.date_livraison }} {{ l.heure_livraison }}</td>
+                <td>{{ l.get_statut_display }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">Aucune livraison.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

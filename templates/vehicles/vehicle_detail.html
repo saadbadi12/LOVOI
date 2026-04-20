@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Accueil</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'vehicles:vehicle_list' %}">Véhicules</a></li>
+            <li class="breadcrumb-item active">{{ vehicule.marque }} {{ vehicule.modele }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-md-6">
+            {% if vehicule.photo %}
+                <img src="{{ vehicule.photo.url }}" class="img-fluid rounded" alt="{{ vehicule }}">
+            {% else %}
+                <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 400px;">Pas d'image</div>
+            {% endif %}
+        </div>
+        <div class="col-md-6">
+            <h1>{{ vehicule.marque }} {{ vehicule.modele }}</h1>
+            <span class="badge bg-{% if vehicule.statut == 'DISPONIBLE' %}success{% else %}danger{% endif %} fs-6">
+                {{ vehicule.get_statut_display }}
+            </span>
+
+            <table class="table mt-4">
+                <tr><td><strong>Année:</strong></td><td>{{ vehicule.annee }}</td></tr>
+                <tr><td><strong>Immatriculation:</strong></td><td>{{ vehicule.immatriculation }}</td></tr>
+                <tr><td><strong>Carburant:</strong></td><td>{{ vehicule.get_carburant_display }}</td></tr>
+                <tr><td><strong>Transmission:</strong></td><td>{{ vehicule.get_transmission_display }}</td></tr>
+                <tr><td><strong>Places:</strong></td><td>{{ vehicule.places }}</td></tr>
+                <tr><td><strong>Couleur:</strong></td><td>{{ vehicule.couleur }}</td></tr>
+                <tr><td><strong>Catégorie:</strong></td><td>{{ vehicule.categorie|default:"N/A" }}</td></tr>
+                <tr><td><strong>Kilométrage:</strong></td><td>{{ vehicule.kilometrage }} km</td></tr>
+            </table>
+
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h3 class="text-primary">{{ vehicule.prix_journalier }} MAD <small class="text-muted">/ jour</small></h3>
+                    <p class="mb-2">Caution: <strong>{{ vehicule.caution }} MAD</strong></p>
+                    {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
+                        <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-success btn-lg w-100">Réserver ce véhicule</a>
+                    {% elif not user.is_authenticated %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">Connectez-vous pour réserver</a>
+                    {% else %}
+                        <button class="btn btn-secondary btn-lg w-100" disabled>Non disponible</button>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if vehicule.description %}
+            <p class="mt-4">{{ vehicule.description }}</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if vehicule.avis.all %}
+    <div class="mt-5">
+        <h3>Avis et Notes</h3>
+        <div class="row">
+            {% for avis in vehicule.avis.all %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <strong>{{ avis.client.get_full_name }}</strong>
+                            <span class="text-warning">{% for i in "12345" %}{% if forloop.counter <= avis.note %}★{% else %}☆{% endif %}{% endfor %}</span>
+                        </div>
+                        <p class="mt-2">{{ avis.commentaire }}</p>
+                        <small class="text-muted">{{ avis.date|date:"d/m/Y" }}</small>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

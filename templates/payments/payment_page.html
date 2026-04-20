@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+{% block title %}Paiement - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Paiement - Réservation #{{ reservation.id }}</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5>Détails de la réservation</h5>
+            <table class="table">
+                <tr>
+                    <td><strong>Véhicule:</strong></td>
+                    <td>{{ reservation.vehicule }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Date début:</strong></td>
+                    <td>{{ reservation.date_debut }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Date fin:</strong></td>
+                    <td>{{ reservation.date_fin }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Montant total:</strong></td>
+                    <td class="text-primary fs-4">{{ reservation.montant_total }} MAD</td>
+                </tr>
+            </table>
+
+            <hr>
+
+            <h5>Mode de paiement</h5>
+            <form method="post">
+                {% csrf_token %}
+                <input type="hidden" name="amount" value="{{ reservation.montant_total }}">
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" value="carte_bancaire" id="carte" checked>
+                            <label class="form-check-label" for="carte">
+                                <strong>Carte bancaire</strong>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" value="especes" id="especes">
+                            <label class="form-check-label" for="especes">
+                                <strong>Espèces</strong>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" value="virement" id="virement">
+                            <label class="form-check-label" for="virement">
+                                <strong>Virement bancaire</strong>
+                            </label>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="radio" name="payment_method" value="paypal" id="paypal">
+                            <label class="form-check-label" for="paypal">
+                                <strong>PayPal</strong>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        Confirmer le paiement - {{ reservation.montant_total }} MAD
+                    </button>
+                    <a href="{% url 'reservations:reservation_detail' reservation.id %}" class="btn btn-secondary btn-lg ms-2">
+                        Annuler
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

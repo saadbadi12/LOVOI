@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Mon Profil - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Mon Profil</h1>
+    <div class="card mt-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>Nom d'utilisateur:</strong> {{ user.username }}</p>
+                    <p><strong>Email:</strong> {{ user.email }}</p>
+                    <p><strong>Prénom:</strong> {{ user.first_name }}</p>
+                    <p><strong>Nom:</strong> {{ user.last_name }}</p>
+                </div>
+                <div class="col-md-6">
+                    <p><strong>Téléphone:</strong> {{ user.telephone }}</p>
+                    <p><strong>Adresse:</strong> {{ user.adresse }}</p>
+                    <p><strong>Numéro de permis:</strong> {{ user.permis_numero }}</p>
+                    <p><strong>Date de délivrance:</strong> {{ user.permis_date }}</p>
+                    <p><strong>Rôle:</strong> {{ user.get_role_display }}</p>
+                    <p><strong>Inscrit le:</strong> {{ user.date_inscription }}</p>
+                </div>
+            </div>
+            <a href="#" class="btn btn-primary mt-3">Modifier le profil</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

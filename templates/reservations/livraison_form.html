@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Livraison - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Planifier Livraison</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Réservation</label>
+                        <select name="reservation" class="form-select" required>
+                            {% for r in reservations %}
+                            <option value="{{ r.id }}">#{{ r.id }} - {{ r.client }} - {{ r.vehicule }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Livreur</label>
+                        <select name="livreur" class="form-select">
+                            <option value="">Non assigné</option>
+                            {% for l in livreurs %}
+                            <option value="{{ l.id }}">{{ l }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Date</label>
+                        <input type="date" name="date_livraison" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Heure</label>
+                        <input type="time" name="heure_livraison" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Lieu de livraison</label>
+                    <input type="text" name="lieu_livraison" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

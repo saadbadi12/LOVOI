@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Maintenances - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Maintenances</h1>
+    <a href="{% url 'vehicles:maintenance_create' %}" class="btn btn-primary mt-3">+ Nouvelle Maintenance</a>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>Véhicule</th>
+                <th>Type</th>
+                <th>Date prévue</th>
+                <th>Statut</th>
+                <th>Coût</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in maintenances %}
+            <tr>
+                <td>{{ m.vehicule }}</td>
+                <td>{{ m.get_type_display }}</td>
+                <td>{{ m.date_prevue }}</td>
+                <td>{{ m.get_statut_display }}</td>
+                <td>{{ m.cout|default:"-" }} MAD</td>
+                <td><a href="{% url 'vehicles:maintenance_update' m.pk %}" class="btn btn-sm btn-outline-primary">Modifier</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">Aucune maintenance.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

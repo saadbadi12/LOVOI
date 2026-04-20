@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Notre Parc Auto</h1>
+
+    <form method="get" class="row g-3 mt-3 p-3 bg-light rounded">
+        <div class="col-md-3">
+            <input type="text" name="search" class="form-control" placeholder="Rechercher..." value="{{ filters.search }}">
+        </div>
+        <div class="col-md-2">
+            <select name="categorie" class="form-select">
+                <option value="">Catégorie</option>
+                {% for cat in categories %}
+                <option value="{{ cat.id }}" {% if filters.categorie == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.type }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="carburant" class="form-select">
+                <option value="">Carburant</option>
+                <option value="ESSENCE" {% if filters.carburant == 'ESSENCE' %}selected{% endif %}>Essence</option>
+                <option value="DIESEL" {% if filters.carburant == 'DIESEL' %}selected{% endif %}>Diesel</option>
+                <option value="ELECTRIQUE" {% if filters.carburant == 'ELECTRIQUE' %}selected{% endif %}>Électrique</option>
+                <option value="HYBRIDE" {% if filters.carburant == 'HYBRIDE' %}selected{% endif %}>Hybride</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="transmission" class="form-select">
+                <option value="">Transmission</option>
+                <option value="MANUELLE" {% if filters.transmission == 'MANUELLE' %}selected{% endif %}>Manuelle</option>
+                <option value="AUTOMATIQUE" {% if filters.transmission == 'AUTOMATIQUE' %}selected{% endif %}>Automatique</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <input type="number" name="prix_max" class="form-control" placeholder="Prix max (MAD)" value="{{ filters.prix_max }}">
+        </div>
+        <div class="col-md-1">
+            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+        </div>
+    </form>
+
+    <div class="row mt-4">
+        {% for vehicule in page_obj %}
+        <div class="col-md-4 mb-4">
+            <div class="card h-100">
+                {% if vehicule.photo %}
+                    <img src="{{ vehicule.photo.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ vehicule }}">
+                {% else %}
+                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Pas d'image</div>
+                {% endif %}
+                <div class="card-body">
+                    <h5 class="card-title">{{ vehicule.marque }} {{ vehicule.modele }}</h5>
+                    <p class="card-text">
+                        <span class="badge bg-secondary">{{ vehicule.categorie|default:"N/A" }}</span>
+                        <span class="badge bg-info">{{ vehicule.get_carburant_display }}</span>
+                        <span class="badge bg-dark">{{ vehicule.get_transmission_display }}</span>
+                    </p>
+                    <p class="small text-muted">{{ vehicule.annee }} | {{ vehicule.places }} places | {{ vehicule.couleur }}</p>
+                    <p class="text-primary fw-bold fs-5">{{ vehicule.prix_journalier }} MAD / jour</p>
+                    {% if vehicule.statut == 'DISPONIBLE' %}
+                        <span class="badge bg-success mb-2">Disponible</span>
+                    {% else %}
+                        <span class="badge bg-danger mb-2">{{ vehicule.get_statut_display }}</span>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{% url 'vehicles:vehicle_detail' vehicule.pk %}" class="btn btn-outline-primary btn-sm">Détails</a>
+                    {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
+                        <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-success btn-sm">Réserver</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="col-12">
+            <p class="text-center text-muted">Aucun véhicule trouvé.</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if page_obj.has_other_pages %}
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item"><a class="page-link" href="?page=1">Première</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>
+            {% endif %}
+            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            {% if page_obj.has_next %}
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivante</a></li>
+            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernière</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

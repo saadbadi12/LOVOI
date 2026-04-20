@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Paiement Annulé - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-warning">
+        <h1 class="display-4">Paiement Annulé</h1>
+        <p class="lead">Le paiement a été annulé.</p>
+        <hr>
+        <p>Votre réservation est toujours active. Vous pouvez réessayer le paiement à tout moment.</p>
+        <a href="{% url 'accounts:dashboard_client' %}" class="btn btn-primary mt-3">Retour à mon espace</a>
+    </div>
+</div>
+{% endblock %}

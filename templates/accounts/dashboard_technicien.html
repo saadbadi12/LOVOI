@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Technicien - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Mon Espace - Technicien</h1>
+    <p class="lead">Bienvenue, {{ user.get_full_name }}</p>
+    <a href="{% url 'vehicles:maintenance_list' %}" class="btn btn-primary">Mes Maintenances</a>
+</div>
+{% endblock %}

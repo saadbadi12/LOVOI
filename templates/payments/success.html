@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Paiement Réussi - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <div class="alert alert-success">
+        <h1 class="display-4">✓ Paiement Réussi!</h1>
+        <p class="lead">Votre paiement a été traité avec succès.</p>
+        <hr>
+        <p>Vous recevrez une confirmation par email sous peu.</p>
+        <a href="{% url 'accounts:dashboard_client' %}" class="btn btn-primary mt-3">Retour à mon espace</a>
+    </div>
+</div>
+{% endblock %}

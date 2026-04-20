@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}Mon Espace - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Mon Espace</h1>
+
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ total_reservations }}</h3>
+                    <p>Réservations totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ reservations|length }}</h3>
+                    <p>En cours</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center">
+                <div class="card-body">
+                    <h3>{{ user.get_full_name|default:user.username }}</h3>
+                    <p>{{ user.get_role_display }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <h3 class="mt-5">Mes Dernières Réservations</h3>
+    <table class="table table-striped mt-3">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Véhicule</th>
+                <th>Date début</th>
+                <th>Date fin</th>
+                <th>Montant</th>
+                <th>Statut</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for res in reservations %}
+            <tr>
+                <td>{{ res.id }}</td>
+                <td>{{ res.vehicule }}</td>
+                <td>{{ res.date_debut }}</td>
+                <td>{{ res.date_fin }}</td>
+                <td>{{ res.montant_total }} MAD</td>
+                <td><span class="badge bg-{% if res.statut_reservation == 'TERMINEE' %}success{% elif res.statut_reservation == 'EN_COURS' %}primary{% elif res.statut_reservation == 'ANNULEE' %}danger{% else %}warning{% endif %}">{{ res.get_statut_reservation_display }}</span></td>
+                <td><a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-outline-primary">Voir</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7">Aucune réservation.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <a href="{% url 'reservations:my_reservations' %}" class="btn btn-outline-primary mt-3">Toutes mes réservations</a>
+</div>
+{% endblock %}

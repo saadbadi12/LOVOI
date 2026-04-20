@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}Document - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{% if document %}Modifier{% else %}Ajouter{% endif %} Document</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Véhicule</label>
+                        <select name="vehicule" class="form-select" required>
+                            {% for v in vehicles %}
+                            <option value="{{ v.id }}">{{ v.immatriculation }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Type</label>
+                        <select name="type" class="form-select">
+                            <option value="ASSURANCE">Assurance</option>
+                            <option value="CARTE_GRISE">Carte grise</option>
+                            <option value="VISITE_TECHNIQUE">Visite technique</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Numéro</label>
+                        <input type="text" name="numero" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Date d'expiration</label>
+                        <input type="date" name="date_expiration" class="form-control" required>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Document (fichier)</label>
+                    <input type="file" name="document" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

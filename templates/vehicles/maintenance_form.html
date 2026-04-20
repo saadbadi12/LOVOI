@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}Maintenance - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>{% if maintenance %}Modifier{% else %}Nouvelle{% endif %} Maintenance</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Véhicule</label>
+                        <select name="vehicule" class="form-select" required>
+                            {% for v in vehicles %}
+                            <option value="{{ v.id }}">{{ v.immatriculation }} - {{ v.marque }} {{ v.modele }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Type</label>
+                        <select name="type" class="form-select">
+                            <option value="PREVENTIVE">Préventive</option>
+                            <option value="CORRECTIVE">Corrective</option>
+                            <option value="REVISION">Révision</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Date prévue</label>
+                        <input type="date" name="date_prevue" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Statut</label>
+                        <select name="statut" class="form-select">
+                            <option value="MAINTENANCE_REQUISE">Maintenance requise</option>
+                            <option value="EN_MAINTENANCE">En maintenance</option>
+                            <option value="TERMINEE">Terminée</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Kilométrage</label>
+                        <input type="number" name="kilometrage" class="form-control">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Coût (MAD)</label>
+                        <input type="number" name="cout" step="0.01" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

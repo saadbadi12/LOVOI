@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% block title %}État des Lieux - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>État des Lieux - Réservation #{{ reservation.id }}</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="reservation" value="{{ reservation.id }}">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Type</label>
+                        <select name="type" class="form-select">
+                            <option value="ENTREE">Entrée</option>
+                            <option value="SORTIE">Sortie</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Employé</label>
+                        <select name="employe" class="form-select">
+                            {% for e in employes %}
+                            <option value="{{ e.id }}">{{ e }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Kilométrage</label>
+                        <input type="number" name="kilometrage" class="form-control" required>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Niveau de carburant (%)</label>
+                        <input type="number" name="niveau_carburant" class="form-control" value="100" min="0" max="100">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label>Commentaire</label>
+                    <textarea name="commentaire" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label>Photos</label>
+                    <input type="file" name="photos" class="form-control">
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

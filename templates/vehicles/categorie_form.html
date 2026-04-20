@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}Catégorie - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Ajouter Catégorie</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label>Type</label>
+                    <input type="text" name="type" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Description</label>
+                    <textarea name="description" class="form-control" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label>Icône (optionnel)</label>
+                    <input type="text" name="icon" class="form-control" placeholder="e.g., car, truck">
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

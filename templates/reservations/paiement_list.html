@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Paiements - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Paiements</h1>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Réservation</th>
+                <th>Type</th>
+                <th>Montant</th>
+                <th>Mode</th>
+                <th>Statut</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in paiements %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.reservation.id }}</td>
+                <td>{{ p.get_type_display }}</td>
+                <td>{{ p.amount }} MAD</td>
+                <td>{{ p.get_mode_display }}</td>
+                <td>{{ p.get_statut_display }}</td>
+                <td>{{ p.date_paiement|date:"d/m/Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="7" class="text-center">Aucun paiement.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

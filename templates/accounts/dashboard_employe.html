@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard Employé - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Mon Espace - Employé</h1>
+    <p class="lead">Bienvenue, {{ user.get_full_name }}</p>
+
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Mes États des Lieux</div>
+                <div class="card-body">
+                    {% if etats_des_lieux %}
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Réservation</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for e in etats_des_lieux %}
+                            <tr>
+                                <td>{{ e.reservation.id }}</td>
+                                <td>{{ e.get_type_display }}</td>
+                                <td>{{ e.date|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p class="text-muted">Aucun état des lieux.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">Actions</div>
+                <div class="card-body">
+                    <a href="{% url 'reservations:etat_des_lieux_list' %}" class="btn btn-primary w-100 mb-2">Tous les États des Lieux</a>
+                    <a href="{% url 'reservations:reservation_list' %}" class="btn btn-info w-100">Toutes les Réservations</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

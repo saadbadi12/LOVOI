@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Notifications - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Mes Notifications</h1>
+    <div class="list-group mt-4">
+        {% for notif in notifications %}
+        <div class="list-group-item {% if not notif.lue %}fw-bold{% endif %}">
+            <div class="d-flex justify-content-between">
+                <h5>{{ notif.titre }}</h5>
+                <small>{{ notif.date_envoi }}</small>
+            </div>
+            <p>{{ notif.message }}</p>
+            <span class="badge bg-{% if notif.type == 'RESERVATION' %}primary{% elif notif.type == 'PAIEMENT' %}success{% elif notif.type == 'MAINTENANCE' %}warning{% else %}secondary{% endif %}">{{ notif.get_type_display }}</span>
+        </div>
+        {% empty %}
+        <p>Aucune notification.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

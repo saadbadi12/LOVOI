@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}États des Lieux - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>États des Lieux</h1>
+
+    <table class="table table-striped mt-4">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Réservation</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th>Employé</th>
+                <th>Kilométrage</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in etats %}
+            <tr>
+                <td>{{ e.id }}</td>
+                <td>{{ e.reservation.id }}</td>
+                <td>{{ e.get_type_display }}</td>
+                <td>{{ e.date|date:"d/m/Y H:i" }}</td>
+                <td>{{ e.employe|default:"-" }}</td>
+                <td>{{ e.kilometrage }} km</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="text-center">Aucun état des lieux.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
