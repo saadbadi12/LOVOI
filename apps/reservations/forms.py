@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from datetime import date
 from .models import (Reservation, Slot, Contrat, Livraison, Paiement,
                      Facture, Avis,EtatDesLieux)
 

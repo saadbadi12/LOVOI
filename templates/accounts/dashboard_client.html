@@ -1,67 +1,197 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Mon Espace - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Mon Espace</h1>
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
 
-    <div class="row mt-4">
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 25px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover { transform: translateY(-5px); border-color: rgba(255,107,107,0.4); }
+
+.stat-number {
+    font-size: 3rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ff6b6b, #ffe66d);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.status-badge {
+    padding: 8px 15px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.status-en_attente { background: rgba(255,193,7,0.2); color: #ffc107; }
+.status-confirmee { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+.status-en_cours { background: rgba(0,123,255,0.2); color: #0d6efd; }
+.status-terminee { background: rgba(25,135,84,0.2); color: #198754; }
+.status-annulee { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+
+.action-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 10px 20px;
+    border-radius: 50px;
+    color: white;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-2px); }
+
+.vehicle-thumb {
+    width: 80px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 10px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="text-white fw-bold mb-1">Mon Espace</h1>
+            <p class="text-white-50 mb-0">Bienvenue, {{ user.get_full_name|default:user.username }}</p>
+        </div>
+        <div>
+            <span class="status-badge status-confirmee">
+                <i class="fas fa-circle me-1"></i>{{ user.get_role_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-5">
         <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ total_reservations }}</h3>
-                    <p>Réservations totales</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ total_reservations }}</div>
+                <p class="text-white-50 mb-0">Réservations totales</p>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ reservations|length }}</h3>
-                    <p>En cours</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ reservations.count|default:reservations|length }}</div>
+                <p class="text-white-50 mb-0">En cours</p>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h3>{{ user.get_full_name|default:user.username }}</h3>
-                    <p>{{ user.get_role_display }}</p>
-                </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ user.nb_locations|default:0 }}</div>
+                <p class="text-white-50 mb-0">Locations effectuées</p>
             </div>
         </div>
     </div>
 
-    <h3 class="mt-5">Mes Dernières Réservations</h3>
-    <table class="table table-striped mt-3">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Véhicule</th>
-                <th>Date début</th>
-                <th>Date fin</th>
-                <th>Montant</th>
-                <th>Statut</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for res in reservations %}
-            <tr>
-                <td>{{ res.id }}</td>
-                <td>{{ res.vehicule }}</td>
-                <td>{{ res.date_debut }}</td>
-                <td>{{ res.date_fin }}</td>
-                <td>{{ res.montant_total }} MAD</td>
-                <td><span class="badge bg-{% if res.statut_reservation == 'TERMINEE' %}success{% elif res.statut_reservation == 'EN_COURS' %}primary{% elif res.statut_reservation == 'ANNULEE' %}danger{% else %}warning{% endif %}">{{ res.get_statut_reservation_display }}</span></td>
-                <td><a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-outline-primary">Voir</a></td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="7">Aucune réservation.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Quick Actions -->
+    <div class="d-flex gap-3 mb-5">
+        <a href="{% url 'vehicles:vehicle_list' %}" class="action-btn">
+            <i class="fas fa-car"></i> Réserver un véhicule
+        </a>
+        <a href="{% url 'reservations:my_reservations' %}" class="action-btn">
+            <i class="fas fa-list"></i> Toutes mes réservations
+        </a>
+    </div>
 
-    <a href="{% url 'reservations:my_reservations' %}" class="btn btn-outline-primary mt-3">Toutes mes réservations</a>
+    <!-- Reservations -->
+    <div class="glass-card p-4">
+        <h5 class="text-warning mb-4"><i class="fas fa-calendar-check me-2"></i>Mes Dernières Réservations</h5>
+
+        {% if reservations %}
+        <div class="table-responsive">
+            <table class="table table-dark table-hover">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Véhicule</th>
+                        <th>Date début</th>
+                        <th>Date fin</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for res in reservations %}
+                    <tr>
+                        <td class="fw-bold">#{{ res.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                {% if res.vehicule.photo %}
+                                <img src="{{ res.vehicule.photo.url }}" class="vehicle-thumb" alt="">
+                                {% else %}
+                                <div class="bg-secondary rounded p-2">🚗</div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-bold text-white">{{ res.vehicule.marque }} {{ res.vehicule.modele }}</div>
+                                    <small class="text-white-50">{{ res.vehicule.immatriculation }}</small>
+                                </div>
+                            </div>
+                        </td>
+                        <td>{{ res.date_debut|date:"d/m/Y" }}</td>
+                        <td>{{ res.date_fin|date:"d/m/Y" }}</td>
+                        <td class="fw-bold text-success">{{ res.montant_total }} MAD</td>
+                        <td>
+                            <span class="status-badge status-{{ res.statut_reservation }}">
+                                {{ res.get_statut_reservation_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-outline-light rounded-pill">
+                                <i class="fas fa-eye me-1"></i>Voir
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🚗</div>
+            <h4 class="text-white-50">Aucune réservation</h4>
+            <p class="text-white-50">Parcourez notre flotte et réservez votre premier véhicule.</p>
+            <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-danger rounded-pill px-4">
+                <i class="fas fa-car me-2"></i>Voir les véhicules
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'reservations:my_reservations' %}" class="text-white-50">
+            <i class="fas fa-arrow-right me-2"></i>Voir toutes mes réservations
+        </a>
+    </div>
 </div>
 {% endblock %}

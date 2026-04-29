@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 class Utilisateur(AbstractUser):
     """Parent model for all users."""
     telephone = models.CharField(_('Téléphone'), max_length=20, blank=True)
-    adresse = models.CharField(_('Adresse'), max_length=255, blank=True)
+    adresse = models.TextField(_('Adresse'), blank=True)
     permis_numero = models.CharField(_('Numéro de permis'), max_length=50, blank=True)
     permis_date = models.DateField(_('Date de délivrance du permis'), null=True, blank=True)
     date_inscription = models.DateField(_("Date d'inscription"), auto_now_add=True)
@@ -28,10 +28,33 @@ class Utilisateur(AbstractUser):
     ]
 
     role = models.CharField(_('Rôle'), max_length=20, choices=ROLE_CHOICES, default=ROLE_CLIENT)
+    actif = models.BooleanField(_('Actif'), default=True)
 
-    # Extra fields for specific roles (stored on parent table, nullable)
+    # Common extra fields for all roles
     poste = models.CharField(_('Poste'), max_length=100, blank=True, default='')
     specialite = models.CharField(_('Spécialité'), max_length=100, blank=True, default='')
+
+    # Client-specific fields
+    cin = models.CharField(_('CIN'), max_length=20, blank=True)
+    permis_conduire = models.CharField(_('Permis de conduire'), max_length=30, blank=True)
+    date_naissance = models.DateField(_('Date de naissance'), null=True, blank=True)
+    nb_locations = models.IntegerField(_('Nombre de locations'), default=0)
+
+    # Admin-specific field
+    niveau_acces = models.CharField(_('Niveau d\'accès'), max_length=20,
+                                   choices=[('SUPER_ADMIN', _('Super Administrateur')),
+                                           ('ADMIN', _('Administrateur'))],
+                                   default='ADMIN')
+
+    # Employee-specific field
+    matricule = models.CharField(_('Matricule'), max_length=20, blank=True)
+
+    # Technician-specific field
+    certifications = models.TextField(_('Certifications'), blank=True)
+
+    # Livreur-specific fields
+    zone_couverte = models.CharField(_('Zone couverte'), max_length=100, blank=True)
+    vehicule_service = models.CharField(_('Véhicule de service'), max_length=50, blank=True)
 
     class Meta:
         verbose_name = _('Utilisateur')

@@ -29,10 +29,18 @@ def register_client(request):
     if request.method == 'POST':
         form = ClientRegistrationForm(request.POST)
         if form.is_valid():
-            user = form.save()
-            login(request, user)
-            messages.success(request, 'Compte créé avec succès!')
-            return redirect('accounts:dashboard_client')
+            username = form.cleaned_data.get('username')
+            if Utilisateur.objects.filter(username=username).exists():
+                messages.error(request, f'Le nom d\'utilisateur "{username}" est déjà pris. Veuillez en choisir un autre.')
+                return render(request, 'accounts/register.html', {'form': form})
+            try:
+                user = form.save()
+                login(request, user)
+                messages.success(request, 'Compte créé avec succès! Bienvenue ' + user.first_name)
+                return redirect('accounts:dashboard_client')
+            except Exception as e:
+                messages.error(request, 'Erreur lors de la création du compte. Veuillez réessayer.')
+                return render(request, 'accounts/register.html', {'form': form})
     else:
         form = ClientRegistrationForm()
     return render(request, 'accounts/register.html', {'form': form})

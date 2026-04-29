@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Confirmation du Contrat - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 25px;
+}
+
+.contract-box {
+    background: rgba(255,255,255,0.03);
+    border: 2px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 30px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.contract-box::-webkit-scrollbar { width: 8px; }
+.contract-box::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); border-radius: 4px; }
+.contract-box::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 4px; }
+
+.signature-area {
+    background: rgba(255,255,255,0.08);
+    border: 2px dashed rgba(255,255,255,0.3);
+    border-radius: 15px;
+    padding: 20px;
+    min-height: 120px;
+}
+
+.signature-area input {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--primary);
+    color: white;
+    font-size: 1.5rem;
+    font-style: italic;
+    text-align: center;
+    width: 100%;
+    padding: 10px;
+}
+
+.signature-area input::placeholder { color: rgba(255,255,255,0.4); }
+.signature-area input:focus { outline: none; border-bottom-color: var(--secondary); }
+
+.terms-list li { color: rgba(255,255,255,0.7); margin-bottom: 8px; }
+
+.btn-sign {
+    background: linear-gradient(135deg, var(--primary), #c9184a);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(255,107,107,0.4);
+    transition: all 0.4s ease;
+}
+
+.btn-sign:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(255,107,107,0.5);
+}
+
+.btn-pay {
+    background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(78,205,196,0.4);
+    transition: all 0.4s ease;
+}
+
+.btn-pay:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(78,205,196,0.5);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="text-white fw-bold">Contrat de Location</h1>
+                <p class="text-white-50">Réservation #{{ vehicule.id }} - {{ vehicule.marque }} {{ vehicule.modele }}</p>
+            </div>
+
+            <!-- Contract Summary -->
+            <div class="glass-card p-4 mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="text-warning mb-3"><i class="fas fa-car me-2"></i>Véhicule</h5>
+                        <p class="text-white mb-1">{{ vehicule.marque }} {{ vehicule.modele }}</p>
+                        <p class="text-white-50 small">{{ vehicule.immatriculation }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h5 class="text-warning mb-3"><i class="fas fa-calendar me-2"></i>Dates</h5>
+                        <p class="text-white mb-1">{{ date_debut }} → {{ date_fin }}</p>
+                        <p class="text-white-50 small">{{ nombre_jours }} jour(s)</p>
+                    </div>
+                </div>
+                <hr style="border-color: rgba(255,255,255,0.1);">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Lieu de départ</p>
+                        <p class="text-white fw-bold">{{ lieu_depart }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Lieu de retour</p>
+                        <p class="text-white fw-bold">{{ lieu_retour }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract Terms -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-3"><i class="fas fa-file-contract me-2"></i>Conditions de Location</h5>
+                <div class="contract-box">
+                    <h6 class="text-white mb-3">ARTICLE 1 - OBJET</h6>
+                    <p class="text-white-50 small">Le présent contrat a pour objet la location d'un véhicule automobile entre le loueur et le locataire.</p>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 2 - DURÉE</h6>
+                    <p class="text-white-50 small">La location est consentie pour une durée de {{ nombre_jours }} jour(s), du {{ date_debut }} au {{ date_fin }}.</p>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 3 - TARIF</h6>
+                    <p class="text-white-50 small">Le montant total de la location est de <strong class="text-success">{{ montant_total }} MAD</strong>, incluant une caution de <strong class="text-warning">{{ vehicule.caution }} MAD</strong> restituée en fin de location.</p>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 4 - CONDITIONS</h6>
+                    <ul class="terms-list small">
+                        <li>Le locataire doit être âgé de 21 ans minimum et être titutulaire d'un permis de conduire valide depuis plus d'un an.</li>
+                        <li>Le véhicule est livré avec le plein de carburant et doit être restitué de même.</li>
+                        <li>Le locataire s'engage à ne pas sous-louer le véhicule sans accord écrit du loueur.</li>
+                        <li>En cas d'accident, le locataire doit immédiatement prévenir le loueur et la police.</li>
+                        <li>Le véhicule doit être restitué aux date, heure et lieu convenus.</li>
+                        <li>Les frais de retard sont calculés au tarif journalier majoré de 50%.</li>
+                    </ul>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 5 - ASSURANCE</h6>
+                    <p class="text-white-50 small">Le véhicule est assuré au tiers. Une assurance tous risques peut être souscrite moyennant un supplément quotidien.</p>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 6 - CAUTION</h6>
+                    <p class="text-white-50 small">Une caution de {{ vehicule.caution }} MAD est versée à la remise du véhicule et restituée dans les 15 jours ouvrables après vérification de l'état du véhicule.</p>
+
+                    <h6 class="text-white mb-3 mt-4">ARTICLE 7 - RESPONSABILITÉS</h6>
+                    <p class="text-white-50 small">Le locataire est responsable de tout dommage au véhicule durante la location, sauf assurances souscrites.</p>
+                </div>
+            </div>
+
+            <!-- Signature Section -->
+            <form method="post" action="{% url 'reservations:contract_sign' vehicule.id %}">
+                {% csrf_token %}
+                <input type="hidden" name="date_debut" value="{{ date_debut }}">
+                <input type="hidden" name="date_fin" value="{{ date_fin }}">
+                <input type="hidden" name="lieu_depart" value="{{ lieu_depart }}">
+                <input type="hidden" name="lieu_retour" value="{{ lieu_retour }}">
+
+                <div class="glass-card p-4 mb-4 text-center">
+                    <h5 class="text-warning mb-4"><i class="fas fa-pen-fancy me-2"></i>Signature Electronique</h5>
+                    <p class="text-white-50 mb-4">En signant ci-dessous, j'accepte les conditions de location détaillées dans ce contrat.</p>
+
+                    <div class="signature-area">
+                        <input type="text" name="signature_name" id="signature-name"
+                               placeholder="Écrivez votre nom complet pour signer"
+                               required maxlength="100">
+                        <p class="text-white-50 small mt-2 mb-0">Date: {{ date_debut }}</p>
+                    </div>
+
+                    <div class="form-check mt-4 text-start">
+                        <input class="form-check-input" type="checkbox" id="accept-terms" required>
+                        <label class="form-check-label text-white-50" for="accept-terms">
+                            J'ai lu et j'accepte les conditions de location ci-dessus
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-sign w-100 mb-3" id="sign-btn" disabled>
+                    <i class="fas fa-file-signature me-2"></i>Signer et Continuer vers Paiement
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <a href="{% url 'reservations:reservation_create' vehicule.id %}" class="text-white-50">
+                    <i class="fas fa-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('accept-terms').addEventListener('change', function() {
+    document.getElementById('sign-btn').disabled = !this.checked;
+});
+</script>
+{% endblock %}

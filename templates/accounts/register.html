@@ -1,239 +1,326 @@
 {% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Inscription - LOVOI{% endblock %}
 
 {% block extra_css %}
 <style>
-.auth-page {
+:root {
+    --primary: #ff6b6b;
+    --primary-dark: #ee5a5a;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+    --darker: #0f0f1a;
+    --glass: rgba(255,255,255,0.08);
+    --glass-border: rgba(255,255,255,0.15);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
     min-height: 100vh;
-    background: linear-gradient(135deg, #1a1a2e 0%, #0f0f1a 100%);
-    display: flex;
-    align-items: center;
-    padding: 2rem 0;
 }
 
-.auth-card-modern {
-    background: rgba(255,255,255,0.05);
+.glass-card {
+    background: var(--glass);
     backdrop-filter: blur(30px);
-    border: 1px solid rgba(255,255,255,0.1);
+    border: 1px solid var(--glass-border);
     border-radius: 30px;
-    overflow: hidden;
-    max-width: 500px;
-    margin: 0 auto;
-    width: 100%;
 }
 
-.auth-header-modern {
-    background: linear-gradient(135deg, #4ecdc4 0%, #3dbdb5 100%);
-    padding: 2.5rem 2rem;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-}
-
-.auth-header-modern::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    right: -50%;
-    width: 100%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 60%);
-}
-
-.auth-header-modern h3 {
-    font-family: 'Space Grotesk', sans-serif;
-    font-weight: 700;
-    margin: 0;
-    color: white;
-}
-
-.auth-header-modern p {
-    opacity: 0.9;
-    margin: 0.5rem 0 0;
-    color: rgba(255,255,255,0.8);
-}
-
-.auth-body-modern {
-    padding: 2.5rem 2rem;
-}
-
-.form-control-modern {
+.glass-input {
     background: rgba(255,255,255,0.08);
     border: 2px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 14px 18px;
+    border-radius: 15px;
+    padding: 18px 20px;
     color: white;
     font-size: 1rem;
     transition: all 0.3s ease;
 }
 
-.form-control-modern:focus {
+.glass-input:focus {
     background: rgba(255,255,255,0.12);
-    border-color: #4ecdc4;
-    box-shadow: 0 0 0 4px rgba(78,205,196,0.2);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
     outline: none;
     color: white;
 }
 
-.form-control-modern::placeholder {
-    color: rgba(255,255,255,0.5);
+.glass-input::placeholder {
+    color: rgba(255,255,255,0.45);
 }
 
-.form-label-modern {
+.glass-label {
     color: rgba(255,255,255,0.8);
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.9rem;
-    margin-bottom: 8px;
+    margin-bottom: 10px;
+    display: block;
 }
 
-.btn-primary-modern {
-    background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+.btn-gradient {
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
     border: none;
-    padding: 1rem 2rem;
+    padding: 18px 40px;
     border-radius: 50px;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1.15rem;
     color: white;
-    width: 100%;
+    box-shadow: 0 15px 40px rgba(255,107,107,0.35);
     transition: all 0.4s ease;
-    box-shadow: 0 10px 30px rgba(78,205,196,0.3);
-}
-
-.btn-primary-modern:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(78,205,196,0.4);
-    color: white;
-}
-
-.btn-outline-modern {
-    background: transparent;
-    border: 2px solid rgba(255,255,255,0.3);
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    font-weight: 600;
-    color: white;
     width: 100%;
-    transition: all 0.4s ease;
 }
 
-.btn-outline-modern:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(255,255,255,0.5);
+.btn-gradient:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 50px rgba(255,107,107,0.45);
     color: white;
-    transform: translateY(-2px);
 }
 
-.auth-footer-modern {
-    text-align: center;
-    padding: 1.5rem 2rem 2rem;
-    border-top: 1px solid rgba(255,255,255,0.1);
+.error-text {
+    color: #ff6b6b;
+    font-size: 0.85rem;
+    margin-top: 5px;
 }
 
-.auth-footer-modern a {
-    color: #4ecdc4;
+.success-toast {
+    background: linear-gradient(135deg, var(--secondary), #3dbdb5);
+    border-radius: 15px;
+    padding: 20px 25px;
+    color: white;
     font-weight: 600;
-    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    animation: slideIn 0.5s ease;
 }
 
-.auth-footer-modern a:hover {
-    color: #ffe66d;
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
 }
 
-.alert-modern {
-    background: rgba(255,107,107,0.2);
-    border: 1px solid rgba(255,107,107,0.4);
-    border-radius: 12px;
-    padding: 1rem;
-    color: white;
-    text-align: center;
+.floating-shapes {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 0;
 }
 
-.input-icon {
-    position: relative;
-}
-
-.input-icon i {
+.shape {
     position: absolute;
-    left: 18px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255,255,255,0.5);
+    border-radius: 50%;
+    animation: float 20s infinite;
 }
 
-.input-icon .form-control {
-    padding-left: 50px;
+.shape-1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(255,107,107,0.15) 0%, transparent 70%);
+    top: -100px;
+    right: -100px;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(78,205,196,0.12) 0%, transparent 70%);
+    bottom: -50px;
+    left: -50px;
+    animation-delay: -5s;
+}
+
+.shape-3 {
+    width: 200px;
+    height: 200px;
+    background: radial-gradient(circle, rgba(255,230,109,0.08) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(10deg); }
+}
+
+.icon-wrapper {
+    width: 55px;
+    height: 55px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.bg-icon-1 { background: linear-gradient(135deg, rgba(255,107,107,0.3), rgba(255,107,107,0.1)); }
+.bg-icon-2 { background: linear-gradient(135deg, rgba(78,205,196,0.3), rgba(78,205,196,0.1)); }
+.bg-icon-3 { background: linear-gradient(135deg, rgba(255,230,109,0.3), rgba(255,230,109,0.1)); }
+
+.main-content {
+    position: relative;
+    z-index: 1;
 }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="auth-page">
-    <div class="container">
-        <div class="auth-card-modern shadow-lg">
-            <div class="auth-header-modern">
-                <h3><i class="fas fa-user-plus me-2"></i> LOVOI</h3>
-                <p>Créez votre compte gratuitement</p>
-            </div>
-            <div class="auth-body-modern">
-                {% if messages %}
-                    {% for message in messages %}
-                    <div class="alert-modern mb-4">{{ message }}</div>
-                    {% endfor %}
-                {% endif %}
+<div class="floating-shapes">
+    <div class="shape shape-1"></div>
+    <div class="shape shape-2"></div>
+    <div class="shape shape-3"></div>
+</div>
 
-                <form method="post">
-                    {% csrf_token %}
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label-modern">Prénom</label>
-                            <input type="text" name="first_name" class="form-control form-control-modern" placeholder="Votre prénom" required>
+<main class="main-content py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="glass-card p-5">
+                    <!-- Header -->
+                    <div class="text-center mb-5">
+                        <div class="d-inline-flex align-items-center gap-3 mb-4">
+                            <div class="icon-wrapper bg-icon-1">
+                                <i class="fas fa-car text-white"></i>
+                            </div>
+                            <div>
+                                <h2 class="mb-0 text-white fw-bold">LOVOI</h2>
+                                <small class="text-white-50">Location de Voitures</small>
+                            </div>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label-modern">Nom</label>
-                            <input type="text" name="last_name" class="form-control form-control-modern" placeholder="Votre nom" required>
+                        <h1 class="text-white fw-bold mb-2">Créer un compte</h1>
+                        <p class="text-white-50">Rejoignez-nous pour louer votre véhicule idéal</p>
+                    </div>
+
+                    <!-- Success/Error Messages -->
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="success-toast mb-4">
+                            <i class="fas fa-check-circle"></i>
+                            {{ message }}
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label-modern">Nom d'utilisateur</label>
-                        <input type="text" name="username" class="form-control form-control-modern" placeholder="Identifiant unique" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label-modern">Email</label>
-                        <input type="email" name="email" class="form-control form-control-modern" placeholder="votre@email.com" required>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label-modern">Téléphone</label>
-                        <input type="tel" name="telephone" class="form-control form-control-modern" placeholder="06 12 34 56 78" required>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label-modern">N° Permis</label>
-                            <input type="text" name="permis_numero" class="form-control form-control-modern" placeholder="Ex: AB123456" required>
+                        {% endfor %}
+                    {% endif %}
+
+                    <!-- Form Errors -->
+                    {% if form.errors %}
+                    <div class="alert bg-danger bg-opacity-25 border border-danger rounded-4 p-3 mb-4">
+                        <div class="text-danger fw-semibold mb-2">
+                            <i class="fas fa-exclamation-triangle me-2"></i>Veuillez corriger les erreurs:
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label-modern">Date délivrance</label>
-                            <input type="date" name="permis_date" class="form-control form-control-modern" required>
+                        <ul class="mb-0 ps-3">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                <li class="text-danger small">{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <form method="post" action="{% url 'accounts:register' %}">
+                        {% csrf_token %}
+
+                        <div class="row g-4">
+                            <!-- Personal Info -->
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3">
+                                    <i class="fas fa-user me-2"></i>Informations personnelles
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Prénom</label>
+                                <input type="text" name="first_name" class="glass-input w-100"
+                                       placeholder="Votre prénom" required value="{{ form.first_name.value|default:'' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Nom</label>
+                                <input type="text" name="last_name" class="glass-input w-100"
+                                       placeholder="Votre nom" required value="{{ form.last_name.value|default:'' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Nom d'utilisateur</label>
+                                <input type="text" name="username" class="glass-input w-100"
+                                       placeholder="Identifiant unique" required value="{{ form.username.value|default:'' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Email</label>
+                                <input type="email" name="email" class="glass-input w-100"
+                                       placeholder="votre@email.com" required value="{{ form.email.value|default:'' }}">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="glass-label">Téléphone</label>
+                                <input type="tel" name="telephone" class="glass-input w-100"
+                                       placeholder="06 12 34 56 78" required value="{{ form.telephone.value|default:'' }}">
+                            </div>
+
+                            <!-- Driving License -->
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3 mt-2">
+                                    <i class="fas fa-id-card me-2"></i>Informations de permis
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">N° Permis de conduire</label>
+                                <input type="text" name="permis_numero" class="glass-input w-100"
+                                       placeholder="Ex: AB123456" required value="{{ form.permis_numero.value|default:'' }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Date de délivrance</label>
+                                <input type="date" name="permis_date" class="glass-input w-100" required
+                                       value="{{ form.permis_date.value|default:'' }}">
+                            </div>
+
+                            <!-- Password -->
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3 mt-2">
+                                    <i class="fas fa-lock me-2"></i>Sécurité
+                                </h5>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Mot de passe</label>
+                                <input type="password" name="password1" class="glass-input w-100"
+                                       placeholder="Minimum 8 caractères" required>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="glass-label">Confirmer mot de passe</label>
+                                <input type="password" name="password2" class="glass-input w-100"
+                                       placeholder="Confirmez votre mot de passe" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label-modern">Mot de passe</label>
-                        <input type="password" name="password1" class="form-control form-control-modern" placeholder="Minimum 8 caractères" required>
-                    </div>
-                    <div class="mb-4">
-                        <label class="form-label-modern">Confirmer</label>
-                        <input type="password" name="password2" class="form-control form-control-modern" placeholder="Confirmez votre mot de passe" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary-modern">
-                        <i class="fas fa-check me-2"></i> Créer mon compte
-                    </button>
-                </form>
-            </div>
-            <div class="auth-footer-modern">
-                <p class="text-white-50 mb-3">Déjà inscrit ?</p>
-                <a href="{% url 'accounts:login' %}" class="btn btn-outline-modern">
-                    <i class="fas fa-sign-in-alt me-2"></i> Se connecter
-                </a>
+
+                        <!-- Submit -->
+                        <div class="mt-5">
+                            <button type="submit" class="btn-gradient">
+                                <i class="fas fa-user-plus me-2"></i>Créer mon compte
+                            </button>
+                        </div>
+
+                        <!-- Login Link -->
+                        <div class="text-center mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                            <p class="text-white-50 mb-3">Déjà inscrit ?</p>
+                            <a href="{% url 'accounts:login' %}" class="btn btn-outline-light rounded-pill px-5 py-2">
+                                <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
+</main>
 {% endblock %}

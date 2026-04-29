@@ -18,22 +18,176 @@ from apps.accounts.models import Utilisateur
 
 @login_required
 def reservation_create(request, vehicle_id):
-    """Create a new reservation for a vehicle."""
+    """Show reservation form and redirect to payment confirmation."""
     vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
 
     if request.method == 'POST':
         form = ReservationForm(request.POST)
         if form.is_valid():
-            reservation = form.save(commit=False)
-            reservation.client = request.user
-            reservation.calculer_total()
-            reservation.save()
-            messages.success(request, 'Réservation créée! En attente de confirmation.')
-            return redirect('reservations:reservation_detail', pk=reservation.id)
+            # Store form data in session and redirect to contract signing
+            request.session['reservation_data'] = {
+                'vehicule_id': vehicle_id,
+                'date_debut': str(form.cleaned_data['date_debut']),
+                'date_fin': str(form.cleaned_data['date_fin']),
+                'lieu_depart': form.cleaned_data['lieu_depart'],
+                'lieu_retour': form.cleaned_data['lieu_retour'],
+            }
+            return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
     else:
         form = ReservationForm(initial={'vehicule': vehicule})
     return render(request, 'reservations/reservation_form.html',
                   {'form': form, 'vehicule': vehicule})
+
+
+@login_required
+def contract_sign(request, vehicle_id):
+    """Show contract for signature before payment."""
+    vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
+
+    if 'reservation_data' not in request.session:
+        messages.error(request, 'Session expirée. Veuillez recommencer.')
+        return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
+
+    data = request.session['reservation_data']
+    from datetime import date
+    date_debut = date.fromisoformat(data['date_debut'])
+    date_fin = date.fromisoformat(data['date_fin'])
+    nombre_jours = (date_fin - date_debut).days
+
+    from decimal import Decimal
+    montant_total = Decimal(nombre_jours) * vehicule.prix_journalier
+
+    context = {
+        'vehicule': vehicule,
+        'date_debut': data['date_debut'],
+        'date_fin': data['date_fin'],
+        'lieu_depart': data['lieu_depart'],
+        'lieu_retour': data['lieu_retour'],
+        'nombre_jours': nombre_jours,
+        'montant_total': montant_total,
+    }
+    return render(request, 'reservations/contract_sign.html', context)
+
+
+@login_required
+def contract_sign_process(request, vehicle_id):
+    """Process contract signature and redirect to payment."""
+    vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
+
+    if 'reservation_data' not in request.session:
+        messages.error(request, 'Session expirée. Veuillez recommencer.')
+        return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
+
+    if request.method == 'POST':
+        signature_name = request.POST.get('signature_name')
+        if signature_name:
+            request.session['contract_signed'] = True
+            request.session['signature_name'] = signature_name
+            return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
+
+    return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+
+
+@login_required
+def reservation_payment(request, vehicle_id):
+    """Show payment confirmation page before creating reservation."""
+    vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
+
+    if 'reservation_data' not in request.session:
+        messages.error(request, 'Session expirée. Veuillez recommencer.')
+        return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
+
+    if 'contract_signed' not in request.session:
+        return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+
+    data = request.session['reservation_data']
+    from datetime import date
+    date_debut = date.fromisoformat(data['date_debut'])
+    date_fin = date.fromisoformat(data['date_fin'])
+    nombre_jours = (date_fin - date_debut).days
+
+    from decimal import Decimal
+    montant_total = Decimal(nombre_jours) * vehicule.prix_journalier
+
+    context = {
+        'vehicule': vehicule,
+        'date_debut': data['date_debut'],
+        'date_fin': data['date_fin'],
+        'lieu_depart': data['lieu_depart'],
+        'lieu_retour': data['lieu_retour'],
+        'nombre_jours': nombre_jours,
+        'montant_total': montant_total,
+        'signature_name': request.session.get('signature_name', ''),
+    }
+    return render(request, 'reservations/reservation_payment.html', context)
+
+
+@login_required
+def process_payment(request, vehicle_id):
+    """Process payment and create reservation."""
+    vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
+
+    if 'reservation_data' not in request.session:
+        messages.error(request, 'Session expirée. Veuillez recommencer.')
+        return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
+
+    if 'contract_signed' not in request.session:
+        return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+
+    if request.method == 'POST':
+        data = request.session['reservation_data']
+        payment_method = request.POST.get('payment_method', 'CARTE_BANCAIRE')
+
+        from datetime import date
+        from apps.reservations.models import Reservation, Paiement, Contrat, Facture
+
+        reservation = Reservation.objects.create(
+            client=request.user,
+            vehicule=vehicule,
+            date_debut=date.fromisoformat(data['date_debut']),
+            date_fin=date.fromisoformat(data['date_fin']),
+            lieu_depart=data['lieu_depart'],
+            lieu_retour=data['lieu_retour'],
+        )
+        reservation.calculer_total()
+        reservation.save()
+
+        # Create payment record
+        Paiement.objects.create(
+            reservation=reservation,
+            type='ACOMPTE',
+            amount=reservation.montant_total,
+            mode=payment_method,
+            statut='COMPLETE' if payment_method == 'CARTE_BANCAIRE' else 'EN_ATTENTE'
+        )
+
+        # Create contract with signature
+        Contrat.objects.create(
+            reservation=reservation,
+            statut_signature='SIGNE',
+            signature_client=request.session.get('signature_name', '')
+        )
+
+        # Create invoice
+        Facture.objects.create(
+            reservation=reservation,
+            paiement=Paiement.objects.filter(reservation=reservation).first(),
+            montant_ht=reservation.montant_total,
+            montant_ttc=reservation.montant_total * Decimal('1.20')
+        )
+
+        # Clear session
+        if 'reservation_data' in request.session:
+            del request.session['reservation_data']
+        if 'contract_signed' in request.session:
+            del request.session['contract_signed']
+        if 'signature_name' in request.session:
+            del request.session['signature_name']
+
+        messages.success(request, 'Réservation confirmée! Merci pour votre confiance.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
 
 
 @login_required
@@ -166,6 +320,58 @@ def extend_reservation(request, pk):
     return redirect('reservations:reservation_detail', pk=pk)
 
 
+# ==================== LIVREUR ACTIONS ====================
+
+@login_required
+@user_passes_test(lambda u: u.is_admin() or u.is_livreur())
+def livraison_accept(request, pk):
+    """Livreur accepts a delivery."""
+    livraison = get_object_or_404(Livraison, pk=pk)
+    if livraison.livreur == request.user or request.user.is_admin():
+        livraison.statut = 'EN_COURS'
+        livraison.save()
+        messages.success(request, 'Livraison acceptée!')
+    return redirect('reservations:livraison_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin() or u.is_livreur())
+def livraison_picked_up(request, pk):
+    """Mark vehicle as picked up."""
+    livraison = get_object_or_404(Livraison, pk=pk)
+    if livraison.livreur == request.user or request.user.is_admin():
+        livraison.statut = 'EN_COURS'
+        livraison.kilometrage_depart = request.POST.get('kilometrage')
+        livraison.save()
+        messages.success(request, 'Véhicule récupéré!')
+    return redirect('reservations:livraison_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin() or u.is_livreur())
+def livraison_delivered(request, pk):
+    """Mark vehicle as delivered."""
+    livraison = get_object_or_404(Livraison, pk=pk)
+    if livraison.livreur == request.user or request.user.is_admin():
+        livraison.statut = 'TERMINEE'
+        livraison.save()
+        messages.success(request, 'Livraison terminée!')
+    return redirect('reservations:livraison_list')
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin() or u.is_livreur())
+def livraison_returned(request, pk):
+    """Mark vehicle as returned."""
+    livraison = get_object_or_404(Livraison, pk=pk)
+    if livraison.livreur == request.user or request.user.is_admin():
+        livraison.statut = 'TERMINEE'
+        livraison.kilometrage_retour = request.POST.get('kilometrage')
+        livraison.save()
+        messages.success(request, 'Véhicule retourné!')
+    return redirect('reservations:livraison_list')
+
+
 # ==================== SLOTS ====================
 
 @login_required
@@ -288,6 +494,152 @@ def etat_des_lieux_create(request, reservation_id):
 def etat_des_lieux_list(request):
     etats = EtatDesLieux.objects.all().order_by('-date')
     return render(request, 'reservations/etat_des_lieux_list.html', {'etats': etats})
+
+
+# ==================== PDF EXPORT ====================
+
+@login_required
+def contract_pdf(request, reservation_id):
+    """Export contract as PDF."""
+    reservation = get_object_or_404(Reservation, pk=reservation_id)
+    if reservation.client != request.user and not request.user.is_admin():
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('accounts:dashboard_client')
+
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    from io import BytesIO
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm,
+                           topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=30, alignment=1)
+    story.append(Paragraph("CONTRAT DE LOCATION", title_style))
+    story.append(Spacer(1, 20))
+
+    story.append(Paragraph(f"<b>Réservation N°:</b> {reservation.id}", styles['Normal']))
+    story.append(Paragraph(f"<b>Date:</b> {reservation.date_reservation.strftime('%d/%m/%Y à %H:%M')}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    story.append(Paragraph("<b>LOCATAIRE:</b>", styles['Heading3']))
+    story.append(Paragraph(f"{reservation.client.get_full_name() or reservation.client.username}", styles['Normal']))
+    story.append(Paragraph(f"Email: {reservation.client.email}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    story.append(Paragraph("<b>Véhicule:</b>", styles['Heading3']))
+    story.append(Paragraph(f"{reservation.vehicule.marque} {reservation.vehicule.modele}", styles['Normal']))
+    story.append(Paragraph(f"Immatriculation: {reservation.vehicule.immatriculation}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    data = [
+        ['Date début', str(reservation.date_debut)],
+        ['Date fin', str(reservation.date_fin)],
+        ['Lieu de départ', reservation.lieu_depart],
+        ['Lieu de retour', reservation.lieu_retour],
+        ['Montant total', f"{reservation.montant_total} MAD"],
+        ['Caution', f"{reservation.vehicule.caution} MAD"],
+    ]
+    t = Table(data, colWidths=[5*cm, 10*cm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (0, -1), colors.Color(0.2, 0.2, 0.2)),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+    ]))
+    story.append(t)
+    story.append(Spacer(1, 30))
+
+    if reservation.contrat and reservation.contrat.signature_client:
+        story.append(Paragraph("<b>Signature du locataire:</b>", styles['Heading3']))
+        story.append(Paragraph(f"{reservation.contrat.signature_client}", styles['Normal']))
+
+    doc.build(story)
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename=contrat_{reservation.id}.pdf'
+    return response
+
+
+@login_required
+def facture_pdf(request, reservation_id):
+    """Export invoice as PDF."""
+    reservation = get_object_or_404(Reservation, pk=reservation_id)
+    if reservation.client != request.user and not request.user.is_admin():
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('accounts:dashboard_client')
+
+    from django.http import HttpResponse
+    from reportlab.lib.pagesizes import A4
+    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+    from reportlab.lib.units import cm
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+    from reportlab.lib import colors
+    from io import BytesIO
+
+    buffer = BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=2*cm, leftMargin=2*cm,
+                           topMargin=2*cm, bottomMargin=2*cm)
+    styles = getSampleStyleSheet()
+    story = []
+
+    title_style = ParagraphStyle('Title', parent=styles['Heading1'], fontSize=18, spaceAfter=30, alignment=1)
+    story.append(Paragraph("FACTURE", title_style))
+    story.append(Spacer(1, 20))
+
+    if reservation.facture:
+        story.append(Paragraph(f"<b>N° Facture:</b> {reservation.facture.id}", styles['Normal']))
+        story.append(Paragraph(f"<b>Date:</b> {reservation.facture.date_facture.strftime('%d/%m/%Y')}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    story.append(Paragraph("<b>Client:</b>", styles['Heading3']))
+    story.append(Paragraph(f"{reservation.client.get_full_name() or reservation.client.username}", styles['Normal']))
+    story.append(Paragraph(f"Email: {reservation.client.email}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    story.append(Paragraph("<b>Véhicule:</b>", styles['Heading3']))
+    story.append(Paragraph(f"{reservation.vehicule.marque} {reservation.vehicule.modele}", styles['Normal']))
+    story.append(Spacer(1, 15))
+
+    if reservation.facture:
+        montant_ht = reservation.facture.montant_ht
+        tva = float(montant_ht) * 0.20
+        montant_ttc = reservation.facture.montant_ttc
+    else:
+        montant_ht = reservation.montant_total
+        tva = float(montant_ht) * 0.20
+        montant_ttc = float(montant_ht) * 1.20
+
+    data = [
+        ['Description', 'Montant (MAD)'],
+        [f"Location {reservation.vehicule.marque} {reservation.vehicule.modele} ({reservation.nombre_jours} jour(s))", f"{montant_ht:.2f}"],
+        ['TVA (20%)', f"{tva:.2f}"],
+        ['TOTAL TTC', f"{montant_ttc:.2f}"],
+    ]
+    t = Table(data, colWidths=[10*cm, 5*cm])
+    t.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.Color(0.2, 0.2, 0.2)),
+        ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, -1), (-1, -1), 'Helvetica-Bold'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('ALIGN', (1, 0), (1, -1), 'RIGHT'),
+    ]))
+    story.append(t)
+
+    doc.build(story)
+    buffer.seek(0)
+    response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename=facture_{reservation.id}.pdf'
+    return response
 
 
 # ==================== AVAILABILITY CHECK ====================

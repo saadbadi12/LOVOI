@@ -92,9 +92,11 @@ class Maintenance(models.Model):
     ]
 
     TYPE_CHOICES = [
-        ('PREVENTIVE', _('Préventive')),
-        ('CORRECTIVE', _('Corrective')),
+        ('VIDANGE', _('Vidange')),
         ('REVISION', _('Révision')),
+        ('REPARATION', _('Réparation')),
+        ('CONTROLE_TECHNIQUE', _('Contrôle technique')),
+        ('AUTRE', _('Autre')),
     ]
 
     vehicule = models.ForeignKey(Vehicule, on_delete=models.CASCADE, related_name='maintenances')
@@ -126,9 +128,10 @@ class Maintenance(models.Model):
 class Document(models.Model):
     """Legal vehicle documents."""
     TYPE_CHOICES = [
-        ('ASSURANCE', _('Assurance')),
         ('CARTE_GRISE', _('Carte grise')),
+        ('ASSURANCE', _('Assurance')),
         ('VISITE_TECHNIQUE', _('Visite technique')),
+        ('VIGNETTE', _('Vignette')),
     ]
 
     vehicule = models.ForeignKey(Vehicule, on_delete=models.CASCADE, related_name='documents')

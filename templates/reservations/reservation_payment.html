@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Paiement - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 25px;
+}
+
+.card-input {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 15px;
+    padding: 18px 20px;
+    color: white;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+.card-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
+    outline: none;
+}
+
+.card-input::placeholder { color: rgba(255,255,255,0.4); }
+
+.payment-method {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 15px;
+    padding: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.payment-method:hover, .payment-method.selected {
+    border-color: var(--primary);
+    background: rgba(255,107,107,0.1);
+}
+
+.payment-method input { display: none; }
+
+.card-display {
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    border-radius: 20px;
+    padding: 30px;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.card-display::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 50%);
+}
+
+.card-chip {
+    width: 50px;
+    height: 40px;
+    background: linear-gradient(135deg, #d4af37, #f4d03f);
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.card-number-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.4rem;
+    letter-spacing: 3px;
+    margin: 20px 0;
+}
+
+.card-brand {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+}
+
+.btn-pay {
+    background: linear-gradient(135deg, var(--primary), #c9184a);
+    border: none;
+    padding: 18px 40px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: white;
+    box-shadow: 0 10px 40px rgba(255,107,107,0.4);
+    transition: all 0.4s ease;
+    width: 100%;
+}
+
+.btn-pay:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 50px rgba(255,107,107,0.5);
+}
+
+.payment-section {
+    display: none;
+}
+
+.payment-section.active {
+    display: block;
+    animation: fadeIn 0.4s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Header -->
+            <div class="text-center mb-5">
+                <h1 class="text-white fw-bold">Paiement</h1>
+                <p class="text-white-50">Réservation #{{ vehicule.id }} - {{ vehicule.marque }} {{ vehicule.modele }}</p>
+            </div>
+
+            <!-- Amount Summary -->
+            <div class="glass-card p-4 mb-4 text-center">
+                <p class="text-white-50 mb-2">Montant à payer</p>
+                <h2 class="text-success fw-bold mb-0" style="font-size: 3rem;">{{ montant_total }} MAD</h2>
+                <p class="text-warning mt-2">+ {{ vehicule.caution }} MAD caution (restituée)</p>
+            </div>
+
+            <form method="post" action="{% url 'reservations:process_payment' vehicule.id %}">
+                {% csrf_token %}
+
+                <input type="hidden" name="date_debut" value="{{ date_debut }}">
+                <input type="hidden" name="date_fin" value="{{ date_fin }}">
+                <input type="hidden" name="lieu_depart" value="{{ lieu_depart }}">
+                <input type="hidden" name="lieu_retour" value="{{ lieu_retour }}">
+
+                <!-- Payment Methods -->
+                <div class="glass-card p-4 mb-4">
+                    <h5 class="text-warning mb-4"><i class="fas fa-credit-card me-2"></i>Mode de paiement</h5>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3">
+                            <label class="payment-method w-100 text-center h-100" id="method-cb">
+                                <input type="radio" name="payment_method" value="CARTE_BANCAIRE" required>
+                                <div class="text-white">
+                                    <i class="fas fa-credit-card fa-2x mb-2 text-primary"></i>
+                                    <p class="mb-0 small fw-bold">Carte<br>Bancaire</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="payment-method w-100 text-center h-100" id="method-especes">
+                                <input type="radio" name="payment_method" value="ESPECES">
+                                <div class="text-white">
+                                    <i class="fas fa-money-bill-wave fa-2x mb-2 text-success"></i>
+                                    <p class="mb-0 small fw-bold">Espèces<br><small class="text-white-50">(sur place)</small></p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="payment-method w-100 text-center h-100" id="method-virement">
+                                <input type="radio" name="payment_method" value="VIREMENT">
+                                <div class="text-white">
+                                    <i class="fas fa-university fa-2x mb-2 text-info"></i>
+                                    <p class="mb-0 small fw-bold">Virement<br><small class="text-white-50">bancaire</small></p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="payment-method w-100 text-center h-100" id="method-paypal">
+                                <input type="radio" name="payment_method" value="PAYPAL">
+                                <div class="text-white">
+                                    <i class="fab fa-paypal fa-2x mb-2 text-warning"></i>
+                                    <p class="mb-0 small fw-bold">PayPal</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Credit Card Input Section -->
+                <div class="payment-section" id="card-section">
+                    <div class="glass-card p-4 mb-4">
+                        <h5 class="text-warning mb-4"><i class="fas fa-lock me-2"></i>Informations de la carte</h5>
+
+                        <!-- Card Preview -->
+                        <div class="card-display mb-4">
+                            <div class="card-chip"></div>
+                            <div class="card-number-display" id="card-preview">•••• •••• •••• ••••</div>
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <small class="text-white-50">Titulaire</small>
+                                    <div id="name-preview" class="fw-bold">VOTRE NOM</div>
+                                </div>
+                                <div class="text-right">
+                                    <small class="text-white-50">Expire</small>
+                                    <div id="expiry-preview" class="fw-bold">MM/YY</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Card Form -->
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="text-white-50 mb-2">Numéro de carte</label>
+                                <input type="text" name="card_number" id="card-number" class="card-input w-100"
+                                       placeholder="1234 5678 9012 3456" maxlength="19"
+                                       oninput="this.value = this.value.replace(/[^0-9 ]/g, '').replace(/(.{4})/g, '$1 ').trim()">
+                            </div>
+                            <div class="col-12">
+                                <label class="text-white-50 mb-2">Nom sur la carte</label>
+                                <input type="text" name="card_name" id="card-name" class="card-input w-100"
+                                       placeholder="JEAN DUPONT" oninput="updateCardName(this.value)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-white-50 mb-2">Date d'expiration</label>
+                                <input type="text" name="card_expiry" id="card-expiry" class="card-input w-100"
+                                       placeholder="MM/YY" maxlength="5" oninput="updateExpiry(this.value, event)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="text-white-50 mb-2">CVV</label>
+                                <input type="text" name="card_cvv" id="card-cvv" class="card-input w-100"
+                                       placeholder="123" maxlength="4">
+                            </div>
+                        </div>
+
+                        <div class="mt-3 text-center">
+                            <i class="fas fa-shield-alt text-success me-2"></i>
+                            <span class="text-white-50 small">Vos données sont sécurisées et chiffrées</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cash / Transfer Info -->
+                <div class="payment-section" id="especes-section">
+                    <div class="glass-card p-4 mb-4 text-center">
+                        <i class="fas fa-money-bill-wave fa-4x text-success mb-4"></i>
+                        <h4 class="text-white mb-3">Paiement en espèces</h4>
+                        <p class="text-white-50">Vous paierez directement sur place lors de la récupération du véhicule.</p>
+                    </div>
+                </div>
+
+                <!-- PayPal Section -->
+                <div class="payment-section" id="paypal-section">
+                    <div class="glass-card p-4 mb-4 text-center">
+                        <i class="fab fa-paypal fa-4x text-primary mb-4"></i>
+                        <h4 class="text-white mb-3">Paiement PayPal</h4>
+                        <p class="text-white-50">Vous serez redirigé vers PayPal pour completing le paiement.</p>
+                    </div>
+                </div>
+
+                <!-- Virement Section -->
+                <div class="payment-section" id="virement-section">
+                    <div class="glass-card p-4 mb-4">
+                        <h4 class="text-white mb-3"><i class="fas fa-university me-2"></i>Virement bancaire</h4>
+                        <p class="text-white-50">Utilisez ces coordonnées pour effectuer le virement:</p>
+                        <div class="bg-dark p-3 rounded-4">
+                            <p class="mb-1"><strong>Banque:</strong> Attijariwafa Bank</p>
+                            <p class="mb-1"><strong>IBAN:</strong> MA 123456789012345678901234</p>
+                            <p class="mb-0"><strong>Compte:</strong> 12345678901234</p>
+                        </div>
+                        <p class="text-warning mt-3">Attention: Votre réservation ne sera confirmée qu'après réception du virement.</p>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn-pay" id="pay-btn">
+                    <i class="fas fa-lock me-2"></i>Payer {{ montant_total }} MAD
+                </button>
+
+                <div class="text-center mt-4">
+                    <a href="{% url 'reservations:reservation_create' vehicule.id %}" class="text-white-50">
+                        <i class="fas fa-arrow-left me-2"></i>Retour
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Payment method selection
+const methods = document.querySelectorAll('.payment-method input[type="radio"]');
+const cardSection = document.getElementById('card-section');
+const especesSection = document.getElementById('especes-section');
+const paypalSection = document.getElementById('paypal-section');
+const virementSection = document.getElementById('virement-section');
+const payBtn = document.getElementById('pay-btn');
+
+methods.forEach(method => {
+    method.addEventListener('change', function() {
+        // Remove selected from all
+        document.querySelectorAll('.payment-method').forEach(m => m.classList.remove('selected'));
+        this.closest('.payment-method').classList.add('selected');
+
+        // Hide all sections
+        document.querySelectorAll('.payment-section').forEach(s => s.classList.remove('active'));
+
+        // Show relevant section
+        if (this.value === 'CARTE_BANCAIRE') {
+            cardSection.classList.add('active');
+            payBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Payer {{ montant_total }} MAD';
+        } else if (this.value === 'ESPECES') {
+            especesSection.classList.add('active');
+            payBtn.innerHTML = '<i class="fas fa-check me-2"></i>Confirmer (Paiement sur place)';
+        } else if (this.value === 'PAYPAL') {
+            paypalSection.classList.add('active');
+            payBtn.innerHTML = '<i class="fab fa-paypal me-2"></i>Payer avec PayPal';
+        } else if (this.value === 'VIREMENT') {
+            virementSection.classList.add('active');
+            payBtn.innerHTML = '<i class="fas fa-paper-plane me-2"></i>Envoyer les coordonnées';
+        }
+    });
+});
+
+// Card preview updates
+function updateCardName(value) {
+    document.getElementById('name-preview').textContent = value.toUpperCase() || 'VOTRE NOM';
+}
+
+function updateExpiry(value, event) {
+    let v = value.replace(/\D/g, '');
+    if (v.length >= 2) {
+        v = v.substring(0, 2) + '/' + v.substring(2, 4);
+    }
+    document.getElementById('expiry-preview').textContent = v || 'MM/YY';
+    if (event) event.target.value = v;
+}
+
+document.getElementById('card-number').addEventListener('input', function(e) {
+    let value = e.target.value.replace(/\D/g, '');
+    let formatted = '';
+    for (let i = 0; i < value.length && i < 16; i++) {
+        if (i > 0 && i % 4 === 0) formatted += ' ';
+        formatted += value[i];
+    }
+    e.target.value = formatted;
+    document.getElementById('card-preview').textContent = formatted.padEnd(19, '•') || '•••• •••• •••• ••••';
+});
+
+// Validate card before submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    const method = document.querySelector('input[name="payment_method"]:checked');
+    if (!method) {
+        e.preventDefault();
+        alert('Veuillez sélectionner un mode de paiement');
+        return;
+    }
+
+    if (method.value === 'CARTE_BANCAIRE') {
+        const cardNumber = document.getElementById('card-number').value.replace(/\s/g, '');
+        const cardName = document.getElementById('card-name').value;
+        const cardExpiry = document.getElementById('card-expiry').value;
+        const cardCvv = document.getElementById('card-cvv').value;
+
+        if (cardNumber.length < 16 || !cardName || !cardExpiry || !cardCvv) {
+            e.preventDefault();
+            alert('Veuillez remplir tous les champs de la carte');
+            return;
+        }
+    }
+});
+</script>
+{% endblock %}

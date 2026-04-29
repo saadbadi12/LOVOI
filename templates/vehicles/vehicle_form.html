@@ -5,98 +5,21 @@
 <div class="container mt-4">
     <h1>{{ action }} Véhicule</h1>
 
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        {% for field, errors in form.errors.items %}
+            {% for error in errors %}
+                <p>{{ field }}: {{ error }}</p>
+            {% endfor %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card mt-4">
         <div class="card-body">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label>Marque</label>
-                        <input type="text" name="marque" class="form-control" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Modèle</label>
-                        <input type="text" name="modele" class="form-control" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Année</label>
-                        <input type="number" name="annee" class="form-control" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label>Immatriculation</label>
-                        <input type="text" name="immatriculation" class="form-control" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label>Catégorie</label>
-                        <select name="categorie" class="form-select">
-                            {% for cat in categories %}
-                            <option value="{{ cat.id }}">{{ cat.type }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label>Carburant</label>
-                        <select name="carburant" class="form-select">
-                            <option value="ESSENCE">Essence</option>
-                            <option value="DIESEL">Diesel</option>
-                            <option value="ELECTRIQUE">Électrique</option>
-                            <option value="HYBRIDE">Hybride</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Transmission</label>
-                        <select name="transmission" class="form-select">
-                            <option value="MANUELLE">Manuelle</option>
-                            <option value="AUTOMATIQUE">Automatique</option>
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Places</label>
-                        <input type="number" name="places" class="form-control" required>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label>Prix journalier (MAD)</label>
-                        <input type="number" name="prix_journalier" step="0.01" class="form-control" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Caution (MAD)</label>
-                        <input type="number" name="caution" step="0.01" class="form-control">
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label>Couleur</label>
-                        <input type="text" name="couleur" class="form-control">
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label>Kilométrage</label>
-                        <input type="number" name="kilometrage" class="form-control">
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label>Statut</label>
-                        <select name="statut" class="form-select">
-                            <option value="DISPONIBLE">Disponible</option>
-                            <option value="INDISPONIBLE">Indisponible</option>
-                            <option value="MAINTENANCE_REQUISE">Maintenance requise</option>
-                            <option value="EN_MAINTENANCE">En maintenance</option>
-                            <option value="EN_LIVRAISON">En livraison</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label>Description</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label>Photo</label>
-                    <input type="file" name="photo" class="form-control">
-                </div>
+                {{ form.as_p }}
                 <button type="submit" class="btn btn-success">{{ action }}</button>
             </form>
         </div>

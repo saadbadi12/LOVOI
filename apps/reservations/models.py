@@ -124,7 +124,7 @@ class Reservation(models.Model):
 class Contrat(models.Model):
     """Rental contract PDF."""
     STATUT_CHOICES = [
-        ('GENERE', _('Généré')),
+        ('NON_SIGNE', _('Non signé')),
         ('SIGNE', _('Signé')),
         ('ANNULE', _('Annulé')),
     ]
@@ -134,7 +134,7 @@ class Contrat(models.Model):
     date_generation = models.DateTimeField(_('Date de génération'), auto_now_add=True)
     fichier_pdf = models.FileField(_('Fichier PDF'), upload_to='contrats/', blank=True)
     statut_signature = models.CharField(_('Statut signature'), max_length=20,
-                                      choices=STATUT_CHOICES, default='GENERE')
+                                      choices=STATUT_CHOICES, default='NON_SIGNE')
     signature_client = models.ImageField(_('Signature client'), upload_to='signatures/', blank=True)
 
     class Meta:
@@ -154,9 +154,8 @@ class Contrat(models.Model):
 class Livraison(models.Model):
     """Vehicle delivery/recovery."""
     STATUT_CHOICES = [
-        ('PLANIFIEE', _('Planifiée')),
-        ('EN_COURS', _('En cours')),
-        ('TERMINEE', _('Terminée')),
+        ('EN_ATTENTE', _('En attente')),
+        ('LIVREE', _('Livrée')),
         ('ECHEC', _('Échec')),
     ]
 
@@ -240,10 +239,13 @@ class Facture(models.Model):
     """Invoice for a reservation."""
     reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE,
                                       related_name='facture')
+    paiement = models.ForeignKey(Paiement, on_delete=models.SET_NULL, null=True,
+                                related_name='facture')
     date_facture = models.DateTimeField(_('Date de facture'), auto_now_add=True)
     montant_ht = models.DecimalField(_('Montant HT (MAD)'), max_digits=10, decimal_places=2)
     tva = models.DecimalField(_('TVA (%)'), max_digits=5, decimal_places=2, default=20.0)
     montant_ttc = models.DecimalField(_('Montant TTC (MAD)'), max_digits=10, decimal_places=2)
+    montant_tva = models.DecimalField(_('Montant TVA (MAD)'), max_digits=10, decimal_places=2, default=0)
     fichier_pdf = models.FileField(_('Fichier PDF'), upload_to='factures/', blank=True)
 
     class Meta:
@@ -254,8 +256,10 @@ class Facture(models.Model):
         return f"Facture {self.id} - Réservation {self.reservation.id}"
 
     def save(self, *args, **kwargs):
-        self.montant_ht = self.reservation.montant_total
-        self.montant_ttc = self.montant_ht * (1 + self.tva / 100)
+        if self.reservation and self.reservation.montant_total:
+            self.montant_ht = self.reservation.montant_total
+            self.montant_tva = self.montant_ht * (self.tva / 100)
+            self.montant_ttc = self.montant_ht + self.montant_tva
         super().save(*args, **kwargs)
 
 
@@ -294,9 +298,14 @@ class EtatDesLieux(models.Model):
                                limit_choices_to={'role': 'EMPLOYE'},
                                related_name='etats_des_lieux')
     kilometrage = models.IntegerField(_('Kilométrage'))
-    niveau_carburant = models.IntegerField(_('Niveau de carburant (%)'),
-                                         validators=[MinValueValidator(0), MaxValueValidator(100)],
-                                         default=100)
+    niveau_carburant = models.CharField(_('Niveau de carburant'), max_length=20,
+                                       choices=[
+                                           ('VIDE', _('Vide')),
+                                           ('QUART', _('Quart')),
+                                           ('MOITIE', _('Moitié')),
+                                           ('TROIS_QUARTS', _('Trois quarts')),
+                                           ('PLEIN', _('Plein')),
+                                       ], default='PLEIN')
     commentaire = models.TextField(_('Commentaire'), blank=True)
     photos = models.ImageField(_('Photos'), upload_to='etat_des_lieux/', blank=True)
     signature_client = models.ImageField(_('Signature client'), upload_to='signatures/', blank=True)
@@ -308,3 +317,22 @@ class EtatDesLieux(models.Model):
 
     def __str__(self):
         return f"État des lieux {self.get_type_display()} - Réservation {self.reservation.id}"
+
+
+class Stat(models.Model):
+    """Statistics for vehicles (occupation rate, revenue per month)."""
+    vehicule = models.ForeignKey('vehicles.Vehicule', on_delete=models.CASCADE,
+                                related_name='stats')
+    month = models.IntegerField(_('Mois'))
+    year = models.IntegerField(_('Année'))
+    reservation_count = models.IntegerField(_('Nombre de réservations'), default=0)
+    revenue = models.DecimalField(_('Revenus (MAD)'), max_digits=10, decimal_places=2, default=0)
+
+    class Meta:
+        verbose_name = _('Statistique')
+        verbose_name_plural = _('Statistiques')
+        unique_together = ('vehicule', 'month', 'year')
+        ordering = ['-year', '-month']
+
+    def __str__(self):
+        return f"Stats {self.vehicule} - {self.month}/{self.year}"

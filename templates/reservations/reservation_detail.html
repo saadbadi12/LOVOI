@@ -1,58 +1,179 @@
 {% extends 'base.html' %}
-{% block title %}Réservation {{ reservation.id }} - LOVOI{% endblock %}
+{% load static %}
+
+{% block title %}Réservation #{{ reservation.id }} - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 25px;
+}
+
+.status-badge {
+    padding: 10px 20px;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 0.9rem;
+}
+
+.status-en_attente { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.4); }
+.status-confirmee { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.4); }
+.status-en_cours { background: rgba(0,123,255,0.2); color: #0d6efd; border: 1px solid rgba(0,123,255,0.4); }
+.status-terminee { background: rgba(25,135,84,0.2); color: #198754; border: 1px solid rgba(25,135,84,0.4); }
+.status-annulee { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.4); }
+
+.action-btn {
+    padding: 12px 25px;
+    border-radius: 50px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.action-btn:hover { transform: translateY(-2px); }
+
+.btn-confirm { background: linear-gradient(135deg, #4ecdc4, #3dbdb5); color: white; }
+.btn-start { background: linear-gradient(135deg, #0d6efd, #0a58ca); color: white; }
+.btn-end { background: linear-gradient(135deg, #198754, #157347); color: white; }
+.btn-cancel { background: linear-gradient(135deg, #ff6b6b, #c9184a); color: white; }
+.btn-deliver { background: linear-gradient(135deg, #ffc107, #e6ac00); color: #333; }
+.btn-return { background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Réservation #{{ reservation.id }}</h1>
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="text-white fw-bold mb-1">Réservation #{{ reservation.id }}</h1>
+            <p class="text-white-50 mb-0">Créée le {{ reservation.date_reservation|date:"d/m/Y à H:i" }}</p>
+        </div>
+        <div>
+            <span class="status-badge status-{{ reservation.statut_reservation }}">
+                {{ reservation.get_statut_reservation_display }}
+            </span>
+        </div>
+    </div>
 
-    <div class="row mt-4">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Détails de la Réservation</span>
-                    <span class="badge bg-{% if reservation.statut_reservation == 'TERMINEE' %}success{% elif reservation.statut_reservation == 'EN_COURS' %}primary{% elif reservation.statut_reservation == 'ANNULEE' %}danger{% elif reservation.statut_reservation == 'CONFIRMEE' %}info{% else %}warning{% endif %} fs-6">
-                        {{ reservation.get_statut_reservation_display }}
-                    </span>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Véhicule:</strong> {{ reservation.vehicule }}</p>
-                            <p><strong>Client:</strong> {{ reservation.client.get_full_name }}</p>
-                            <p><strong>Date de réservation:</strong> {{ reservation.date_reservation|date:"d/m/Y H:i" }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Date début:</strong> {{ reservation.date_debut }}</p>
-                            <p><strong>Date fin:</strong> {{ reservation.date_fin }}</p>
-                            <p><strong>Durée:</strong> {{ reservation.nombre_jours }} jour(s)</p>
-                        </div>
+    <div class="row g-4">
+        <!-- Left: Details -->
+        <div class="col-lg-8">
+            <!-- Vehicle & Client -->
+            <div class="glass-card p-4 mb-4">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="text-warning mb-3"><i class="fas fa-car me-2"></i>Véhicule</h5>
+                        <h4 class="text-white fw-bold">{{ reservation.vehicule.marque }} {{ reservation.vehicule.modele }}</h4>
+                        <p class="text-white-50">{{ reservation.vehicule.immatriculation }}</p>
                     </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Lieu de départ:</strong> {{ reservation.lieu_depart }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Lieu de retour:</strong> {{ reservation.lieu_retour }}</p>
-                        </div>
-                    </div>
-                    <hr>
-                    <div class="row">
-                        <div class="col-md-4">
-                            <p class="fw-bold">Montant Total: {{ reservation.montant_total }} MAD</p>
-                        </div>
-                        <div class="col-md-4">
-                            <p>Caution versée: {% if reservation.caution_versee %}Oui{% else %}Non{% endif %}</p>
-                        </div>
+                    <div class="col-md-6">
+                        <h5 class="text-warning mb-3"><i class="fas fa-user me-2"></i>Client</h5>
+                        <h4 class="text-white fw-bold">{{ reservation.client.get_full_name }}</h4>
+                        <p class="text-white-50">{{ reservation.client.email }}</p>
                     </div>
                 </div>
             </div>
 
-            {% if reservation.paiements.all %}
-            <div class="card mt-3">
-                <div class="card-header">Paiements</div>
-                <div class="card-body">
-                    <table class="table table-sm">
+            <!-- Dates & Locations -->
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-3"><i class="fas fa-calendar-alt me-2"></i>Dates & Lieux</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Date de début</p>
+                        <p class="text-white fw-bold fs-5">{{ reservation.date_debut }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Date de fin</p>
+                        <p class="text-white fw-bold fs-5">{{ reservation.date_fin }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Lieu de départ</p>
+                        <p class="text-white fw-bold">{{ reservation.lieu_depart }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Lieu de retour</p>
+                        <p class="text-white fw-bold">{{ reservation.lieu_retour }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contract & Invoice -->
+            {% if reservation.contrat %}
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-3"><i class="fas fa-file-contract me-2"></i>Contrat</h5>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Statut</p>
+                        <span class="badge bg-success">{{ reservation.contrat.get_statut_signature_display }}</span>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-white-50 mb-1">Signature</p>
+                        <p class="text-white fw-bold">{{ reservation.contrat.signature_client }}</p>
+                    </div>
+                </div>
+                <a href="{% url 'reservations:contract_pdf' reservation.pk %}" class="btn btn-sm mt-3" style="background: rgba(255,255,255,0.1); color: white;">
+                    <i class="fas fa-file-pdf me-2"></i>Exporter Contrat PDF
+                </a>
+            </div>
+            {% endif %}
+
+            {% if reservation.facture %}
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-3"><i class="fas fa-file-invoice me-2"></i>Facture</h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <p class="text-white-50 mb-1">Montant HT</p>
+                        <p class="text-white fw-bold">{{ reservation.facture.montant_ht }} MAD</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="text-white-50 mb-1">TVA (20%)</p>
+                        <p class="text-white fw-bold">{{ reservation.facture.montant_tva|floatformat:2 }} MAD</p>
+                    </div>
+                    <div class="col-md-4">
+                        <p class="text-white-50 mb-1">Montant TTC</p>
+                        <p class="text-success fw-bold">{{ reservation.facture.montant_ttc }} MAD</p>
+                    </div>
+                </div>
+                <a href="{% url 'reservations:facture_pdf' reservation.pk %}" class="btn btn-sm mt-3" style="background: rgba(78,205,196,0.2); color: #4ecdc4;">
+                    <i class="fas fa-file-pdf me-2"></i>Exporter Facture PDF
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Payment & Amount -->
+            <div class="glass-card p-4">
+                <h5 class="text-warning mb-3"><i class="fas fa-euro-sign me-2"></i>Paiement</h5>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-white-50 mb-1">Montant total</p>
+                        <h2 class="text-success fw-bold mb-0">{{ reservation.montant_total }} MAD</h2>
+                    </div>
+                    <div>
+                        <p class="text-white-50 mb-1">Caution</p>
+                        <h4 class="text-warning mb-0">{% if reservation.caution_versee %}Versée{% else %}Non versée{% endif %}</h4>
+                    </div>
+                </div>
+
+                {% if reservation.paiements.all %}
+                <hr style="border-color: rgba(255,255,255,0.1);">
+                <h6 class="text-white-50 mb-3">Historique des paiements</h6>
+                <div class="table-responsive">
+                    <table class="table table-dark table-sm">
                         <thead>
                             <tr>
                                 <th>Type</th>
@@ -65,40 +186,116 @@
                             {% for p in reservation.paiements.all %}
                             <tr>
                                 <td>{{ p.get_type_display }}</td>
-                                <td>{{ p.amount }} MAD</td>
+                                <td class="fw-bold">{{ p.amount }} MAD</td>
                                 <td>{{ p.get_mode_display }}</td>
-                                <td>{{ p.get_statut_display }}</td>
+                                <td><span class="badge bg-{% if p.statut == 'COMPLETE' %}success{% else %}warning{% endif %}">{{ p.get_statut_display }}</span></td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
 
-        <div class="col-md-4">
-            <div class="card">
-                <div class="card-header">Actions</div>
-                <div class="card-body">
-                    {% if user.is_admin %}
-                        {% if reservation.statut_reservation == 'EN_ATTENTE' %}
-                            <a href="{% url 'reservations:reservation_confirm' reservation.pk %}" class="btn btn-success w-100 mb-2">Confirmer</a>
-                        {% endif %}
-                        {% if reservation.statut_reservation == 'CONFIRMEE' %}
-                            <a href="{% url 'reservations:reservation_start' reservation.pk %}" class="btn btn-primary w-100 mb-2">Démarrer Location</a>
-                        {% endif %}
-                        {% if reservation.statut_reservation == 'EN_COURS' %}
-                            <a href="{% url 'reservations:reservation_end' reservation.pk %}" class="btn btn-info w-100 mb-2">Terminer Location</a>
-                        {% endif %}
-                        {% if reservation.statut_reservation in 'EN_ATTENTE,CONFIRMEE' %}
-                            <a href="{% url 'reservations:reservation_cancel' reservation.pk %}" class="btn btn-danger w-100 mb-2">Annuler</a>
-                        {% endif %}
-                        <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}" class="btn btn-secondary w-100 mb-2">État des Lieux</a>
-                        <a href="{% url 'reservations:paiement_create' reservation.pk %}" class="btn btn-success w-100">Ajouter Paiement</a>
+        <!-- Right: Actions -->
+        <div class="col-lg-4">
+            <!-- Admin Actions -->
+            {% if user.is_admin %}
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-4"><i class="fas fa-cog me-2"></i>Actions Admin</h5>
+
+                {% if reservation.statut_reservation == 'EN_ATTENTE' %}
+                    <a href="{% url 'reservations:reservation_confirm' reservation.pk %}" class="action-btn btn-confirm w-100 mb-2">
+                        <i class="fas fa-check"></i> Confirmer
+                    </a>
+                {% endif %}
+
+                {% if reservation.statut_reservation == 'CONFIRMEE' %}
+                    <a href="{% url 'reservations:reservation_start' reservation.pk %}" class="action-btn btn-start w-100 mb-2">
+                        <i class="fas fa-play"></i> Démarrer Location
+                    </a>
+                    <a href="{% url 'reservations:livraison_create' %}" class="action-btn btn-deliver w-100 mb-2">
+                        <i class="fas fa-truck"></i> Planifier Livraison
+                    </a>
+                {% endif %}
+
+                {% if reservation.statut_reservation == 'EN_COURS' %}
+                    <a href="{% url 'reservations:reservation_end' reservation.pk %}" class="action-btn btn-end w-100 mb-2">
+                        <i class="fas fa-flag-checkered"></i> Terminer Location
+                    </a>
+                {% endif %}
+
+                {% if reservation.statut_reservation in 'EN_ATTENTE,CONFIRMEE' %}
+                    <a href="{% url 'reservations:reservation_cancel' reservation.pk %}" class="action-btn btn-cancel w-100 mb-2">
+                        <i class="fas fa-times"></i> Annuler
+                    </a>
+                {% endif %}
+
+                <hr style="border-color: rgba(255,255,255,0.1);">
+
+                <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}" class="action-btn btn-secondary w-100 mb-2" style="background: rgba(255,255,255,0.1); color: white;">
+                    <i class="fas fa-clipboard-check"></i> État des Lieux
+                </a>
+                <a href="{% url 'reservations:paiement_create' reservation.pk %}" class="action-btn btn-confirm w-100">
+                    <i class="fas fa-money-bill"></i> Ajouter Paiement
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Livreur Actions -->
+            {% if user.is_livreur or user.is_admin %}
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-4"><i class="fas fa-truck me-2"></i>Actions Livraison</h5>
+
+                {% for livraison in reservation.livraisons.all %}
+                <div class="mb-3 p-3" style="background: rgba(255,255,255,0.05); border-radius: 15px;">
+                    <p class="text-white-50 mb-1">Statut actuel</p>
+                    <span class="badge bg-{% if livraison.statut == 'TERMINEE' %}success{% elif livraison.statut == 'EN_COURS' %}primary{% else %}warning{% endif %} mb-3">
+                        {{ livraison.get_statut_display }}
+                    </span>
+
+                    {% if livraison.statut == 'EN_ATTENTE' %}
+                        <a href="{% url 'reservations:livraison_accept' livraison.pk %}" class="action-btn btn-confirm w-100">
+                            <i class="fas fa-check"></i> Accepter
+                        </a>
+                    {% endif %}
+
+                    {% if livraison.statut == 'EN_COURS' and livraison.type == 'LIVRAISON' %}
+                        <a href="{% url 'reservations:livraison_delivered' livraison.pk %}" class="action-btn btn-deliver w-100">
+                            <i class="fas fa-check-double"></i> Confirmer Livraison
+                        </a>
+                    {% endif %}
+
+                    {% if livraison.statut == 'EN_COURS' and livraison.type == 'RECUPERATION' %}
+                        <a href="{% url 'reservations:livraison_returned' livraison.pk %}" class="action-btn btn-return w-100">
+                            <i class="fas fa-undo"></i> Confirmer Retour
+                        </a>
                     {% endif %}
                 </div>
+                {% empty %}
+                <p class="text-white-50">Aucune livraison associée</p>
+                {% endfor %}
             </div>
+            {% endif %}
+
+            <!-- Client Actions -->
+            {% if user.is_client and reservation.client == user %}
+            <div class="glass-card p-4">
+                <h5 class="text-warning mb-4"><i class="fas fa-user me-2"></i>Mon espace</h5>
+                {% if reservation.statut_reservation == 'EN_ATTENTE' %}
+                    <p class="text-white-50">En attente de confirmation par l'administrateur.</p>
+                {% elif reservation.statut_reservation == 'CONFIRMEE' %}
+                    <p class="text-success"><i class="fas fa-check-circle me-2"></i>Réservation confirmée!</p>
+                {% elif reservation.statut_reservation == 'EN_COURS' %}
+                    <p class="text-primary"><i class="fas fa-car me-2"></i>Véhicule en cours de location</p>
+                {% elif reservation.statut_reservation == 'TERMINEE' %}
+                    <a href="{% url 'reservations:avis_create' reservation.vehicule.pk %}" class="action-btn btn-confirm w-100">
+                        <i class="fas fa-star"></i> Laisser un Avis
+                    </a>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

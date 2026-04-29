@@ -11,9 +11,115 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     {% block extra_css %}{% endblock %}
 </head>
+<style>
+        .navbar-brand {
+            font-family: 'Space Grotesk', sans-serif;
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        .brand-icon {
+            color: #ff6b6b;
+            margin-right: 5px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+        }
+        .custom-toast {
+            backdrop-filter: blur(20px);
+            border-radius: 15px;
+            padding: 20px 25px;
+            color: white;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideIn 0.5s ease;
+            margin-bottom: 10px;
+            min-width: 300px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        .toast-success {
+            background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+        }
+        .toast-error {
+            background: linear-gradient(135deg, #ff6b6b, #c9184a);
+        }
+        .toast-warning {
+            background: linear-gradient(135deg, #ffe66d, #ffc107);
+            color: #333;
+        }
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        .footer-dark {
+            background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        }
+        /* Modern Navbar */
+        .navbar-dark {
+            background: linear-gradient(135deg, #1a1a2e, #16213e) !important;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-dark .nav-link {
+            color: rgba(255,255,255,0.85) !important;
+            transition: all 0.3s ease;
+            padding: 10px 15px !important;
+            border-radius: 10px;
+        }
+        .navbar-dark .nav-link:hover {
+            color: #ff6b6b !important;
+            background: rgba(255,107,107,0.1);
+        }
+        .navbar-dark .nav-link.active {
+            color: #4ecdc4 !important;
+            background: rgba(78,205,196,0.15);
+        }
+        .navbar-dark .navbar-brand {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+            padding: 8px 20px;
+            border-radius: 50px;
+            font-family: 'Space Grotesk', sans-serif;
+        }
+        .brand-icon {
+            color: white !important;
+        }
+        /* User badge */
+        .user-badge {
+            background: linear-gradient(135deg, rgba(78,205,196,0.2), rgba(78,205,196,0.1));
+            border: 1px solid rgba(78,205,196,0.3);
+            border-radius: 50px;
+            padding: 5px 15px;
+        }
+    </style>
+</head>
 <body>
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="custom-toast toast-{{ message.tags }}">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.custom-toast').forEach(toast => {
+                toast.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => toast.remove(), 500);
+            });
+        }, 4000);
+    </script>
+    {% endif %}
     {% if request.user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="/">
                 <span class="brand-icon">◈</span> LOVOI
@@ -84,18 +190,6 @@
     </nav>
     {% endif %}
 
-    {% if messages %}
-    <div class="container mt-3">
-        {% for message in messages %}
-        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %} me-2"></i>
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-
     <main>
         {% block content %}{% endblock %}
     </main>
@@ -117,7 +211,6 @@
                     <ul class="list-unstyled">
                         <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Location voiture</a></li>
                         <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Livraison</a></li>
-                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Transfert aéroport</a></li>
                     </ul>
                 </div>
                 <div class="col-md-2 mb-4 mb-md-0">
@@ -138,7 +231,7 @@
                 </div>
             </div>
             <hr class="my-4 border-secondary">
-            <p class="text-center text-white-50 mb-0">© 2024 LOVOI - Tous droits réservés</p>
+            <p class="text-center text-white-50 mb-0">© 2026 LOVOI - Tous droits réservés</p>
         </div>
     </footer>
 
