@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
 from django.db.models import Q
 from .models import Utilisateur, Notification
-from .forms import ClientRegistrationForm
+from .forms import ClientRegistrationForm, ProfileForm
 from apps.vehicles.models import Vehicule, Categorie
 from apps.reservations.models import Reservation, Livraison, EtatDesLieux
 
@@ -108,6 +108,7 @@ def dashboard_admin(request):
     reservations_en_attente = Reservation.objects.filter(statut_reservation='EN_ATTENTE').count()
 
     recent_reservations = Reservation.objects.all().order_by('-date_reservation')[:10]
+    unread = Notification.objects.filter(utilisateur=request.user, lue=False).count()
 
     context = {
         'total_vehicules': total_vehicules,
@@ -118,6 +119,7 @@ def dashboard_admin(request):
         'reservations_en_cours': reservations_en_cours,
         'reservations_en_attente': reservations_en_attente,
         'recent_reservations': recent_reservations,
+        'unread_notifications': unread,
     }
     return render(request, 'accounts/dashboard_admin.html', context)
 
@@ -156,8 +158,16 @@ def dashboard_livreur(request):
     mes_livraisons = Livraison.objects.filter(
         livreur=request.user
     ).order_by('-date_livraison')[:10]
+    total = Livraison.objects.filter(livreur=request.user).count()
+    en_cours = Livraison.objects.filter(livreur=request.user, statut='EN_COURS').count()
+    completed = Livraison.objects.filter(livreur=request.user, statut__in=['LIVREE', 'TERMINEE']).count()
+    unread = Notification.objects.filter(utilisateur=request.user, lue=False).count()
     context = {
         'livraisons': mes_livraisons,
+        'total_livraisons': total,
+        'en_cours': en_cours,
+        'completed': completed,
+        'unread_notifications': unread,
     }
     return render(request, 'accounts/dashboard_livreur.html', context)
 
@@ -193,8 +203,19 @@ def user_create(request):
 
 @login_required
 def profile(request):
-    """User profile."""
-    return render(request, 'accounts/profile.html', {'user': request.user})
+    """User profile with edit functionality."""
+    show_form = request.GET.get('edit') == '1'
+
+    if request.method == 'POST':
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profil mis à jour avec succès!')
+            return redirect('accounts:profile')
+    else:
+        form = ProfileForm(instance=request.user) if show_form else None
+
+    return render(request, 'accounts/profile.html', {'user': request.user, 'form': form})
 
 
 @login_required

@@ -6,6 +6,7 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
 from datetime import timedelta
+from decimal import Decimal
 from .models import (Reservation, Slot, Contrat, Livraison, Paiement,
                      Facture, Avis,EtatDesLieux)
 from .forms import (ReservationForm, SlotForm, LivraisonForm, PaiementForm,
@@ -31,6 +32,10 @@ def reservation_create(request, vehicle_id):
                 'date_fin': str(form.cleaned_data['date_fin']),
                 'lieu_depart': form.cleaned_data['lieu_depart'],
                 'lieu_retour': form.cleaned_data['lieu_retour'],
+                'latitude_depart': str(form.cleaned_data.get('latitude_depart', '')),
+                'longitude_depart': str(form.cleaned_data.get('longitude_depart', '')),
+                'latitude_retour': str(form.cleaned_data.get('latitude_retour', '')),
+                'longitude_retour': str(form.cleaned_data.get('longitude_retour', '')),
             }
             return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
     else:
@@ -80,9 +85,16 @@ def contract_sign_process(request, vehicle_id):
 
     if request.method == 'POST':
         signature_name = request.POST.get('signature_name')
+        payment_method = request.POST.get('payment_method')
+
         if signature_name:
             request.session['contract_signed'] = True
             request.session['signature_name'] = signature_name
+
+            # If payment is already submitted via modal, go directly to process_payment
+            if payment_method:
+                return redirect('reservations:process_payment', vehicle_id=vehicle_id)
+
             return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
 
     return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
@@ -132,7 +144,8 @@ def process_payment(request, vehicle_id):
         return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
 
     if 'contract_signed' not in request.session:
-        return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+        # Set it now since user is coming from payment modal
+        request.session['contract_signed'] = True
 
     if request.method == 'POST':
         data = request.session['reservation_data']
@@ -141,6 +154,9 @@ def process_payment(request, vehicle_id):
         from datetime import date
         from apps.reservations.models import Reservation, Paiement, Contrat, Facture
 
+        from decimal import Decimal as D
+        from django.conf import settings
+
         reservation = Reservation.objects.create(
             client=request.user,
             vehicule=vehicule,
@@ -148,6 +164,11 @@ def process_payment(request, vehicle_id):
             date_fin=date.fromisoformat(data['date_fin']),
             lieu_depart=data['lieu_depart'],
             lieu_retour=data['lieu_retour'],
+            latitude_depart=data.get('latitude_depart') and D(data['latitude_depart']) or None,
+            longitude_depart=data.get('longitude_depart') and D(data['longitude_depart']) or None,
+            latitude_retour=data.get('latitude_retour') and D(data['latitude_retour']) or None,
+            longitude_retour=data.get('longitude_retour') and D(data['longitude_retour']) or None,
+            statut_reservation='CONFIRMEE',
         )
         reservation.calculer_total()
         reservation.save()
@@ -173,8 +194,48 @@ def process_payment(request, vehicle_id):
             reservation=reservation,
             paiement=Paiement.objects.filter(reservation=reservation).first(),
             montant_ht=reservation.montant_total,
-            montant_ttc=reservation.montant_total * Decimal('1.20')
+            montant_ttc=reservation.montant_total * D('1.20')
         )
+
+        # Create automatic Livraison for the reservation
+        from datetime import datetime as dt
+        from datetime import time as t
+        from apps.accounts.models import Utilisateur
+
+        # Auto-assign to first available livreur
+        available_livreur = Utilisateur.objects.filter(role='LIVREUR', actif=True).first()
+
+        Livraison.objects.create(
+            reservation=reservation,
+            livreur=available_livreur,
+            type='LIVRAISON',
+            date_livraison=reservation.date_debut,
+            heure_livraison=t(9, 0),  # Default 9:00 AM
+            lieu_livraison=reservation.lieu_depart,
+            latitude=reservation.latitude_depart,
+            longitude=reservation.longitude_depart,
+            statut='EN_ATTENTE' if not available_livreur else 'EN_ATTENTE',
+        )
+
+        # Notify admin
+        from apps.accounts.models import Utilisateur, Notification
+        admins = Utilisateur.objects.filter(role='ADMIN')
+        for admin in admins:
+            Notification.objects.create(
+                utilisateur=admin,
+                type='RESERVATION',
+                titre='Nouvelle Réservation Confirmée',
+                message=f'Réservation #{reservation.id} - {request.user} a réservé {vehicule.marque} {vehicule.modele}. Montant: {reservation.montant_total} MAD.'
+            )
+
+        # Notify the assigned livreur
+        if available_livreur:
+            Notification.objects.create(
+                utilisateur=available_livreur,
+                type='RESERVATION',
+                titre='Livraison Assignée',
+                message=f'Une nouvelle livraison vous a été assignée! Réservation #{reservation.id}. Client: {request.user}, Lieu: {data["lieu_depart"]}.'
+            )
 
         # Clear session
         if 'reservation_data' in request.session:

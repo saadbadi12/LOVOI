@@ -6,9 +6,15 @@ from .models import (Reservation, Slot, Contrat, Livraison, Paiement,
 
 
 class ReservationForm(forms.ModelForm):
+    latitude_depart = forms.DecimalField(required=False, widget=forms.HiddenInput())
+    longitude_depart = forms.DecimalField(required=False, widget=forms.HiddenInput())
+    latitude_retour = forms.DecimalField(required=False, widget=forms.HiddenInput())
+    longitude_retour = forms.DecimalField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = Reservation
-        fields = ['vehicule', 'date_debut', 'date_fin', 'lieu_depart', 'lieu_retour']
+        fields = ['vehicule', 'date_debut', 'date_fin', 'lieu_depart', 'lieu_retour',
+                  'latitude_depart', 'longitude_depart', 'latitude_retour', 'longitude_retour']
         widgets = {
             'date_debut': forms.DateInput(attrs={'type': 'date'}),
             'date_fin': forms.DateInput(attrs={'type': 'date'}),
@@ -39,10 +45,13 @@ class SlotForm(forms.ModelForm):
 
 
 class LivraisonForm(forms.ModelForm):
+    latitude = forms.DecimalField(required=False, widget=forms.HiddenInput())
+    longitude = forms.DecimalField(required=False, widget=forms.HiddenInput())
+
     class Meta:
         model = Livraison
         fields = ['reservation', 'livreur', 'type', 'date_livraison',
-                  'heure_livraison', 'lieu_livraison']
+                  'heure_livraison', 'lieu_livraison', 'latitude', 'longitude']
         widgets = {
             'date_livraison': forms.DateInput(attrs={'type': 'date'}),
             'heure_livraison': forms.TimeInput(attrs={'type': 'time'}),

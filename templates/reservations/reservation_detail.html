@@ -52,6 +52,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 .btn-cancel { background: linear-gradient(135deg, #ff6b6b, #c9184a); color: white; }
 .btn-deliver { background: linear-gradient(135deg, #ffc107, #e6ac00); color: #333; }
 .btn-return { background: linear-gradient(135deg, #9c27b0, #7b1fa2); color: white; }
+
+.detail-map-container {
+    height: 250px;
+    border-radius: 15px;
+    margin-top: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
 </style>
 {% endblock %}
 
@@ -104,10 +111,16 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <div class="col-md-6">
                         <p class="text-white-50 mb-1">Lieu de départ</p>
                         <p class="text-white fw-bold">{{ reservation.lieu_depart }}</p>
+                        {% if reservation.latitude_depart and reservation.longitude_depart %}
+                        <div id="map-depart" class="detail-map-container"></div>
+                        {% endif %}
                     </div>
                     <div class="col-md-6">
                         <p class="text-white-50 mb-1">Lieu de retour</p>
                         <p class="text-white fw-bold">{{ reservation.lieu_retour }}</p>
+                        {% if reservation.latitude_retour and reservation.longitude_retour %}
+                        <div id="map-retour" class="detail-map-container"></div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -251,7 +264,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 {% for livraison in reservation.livraisons.all %}
                 <div class="mb-3 p-3" style="background: rgba(255,255,255,0.05); border-radius: 15px;">
                     <p class="text-white-50 mb-1">Statut actuel</p>
-                    <span class="badge bg-{% if livraison.statut == 'TERMINEE' %}success{% elif livraison.statut == 'EN_COURS' %}primary{% else %}warning{% endif %} mb-3">
+                    <span class="badge bg-{% if livraison.statut == 'LIVREE' or livraison.statut == 'TERMINEE' %}success{% elif livraison.statut == 'EN_COURS' %}primary{% else %}warning{% endif %} mb-3">
                         {{ livraison.get_statut_display }}
                     </span>
 
@@ -299,4 +312,34 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
         </div>
     </div>
 </div>
+
+{% if reservation.latitude_depart and reservation.longitude_depart %}
+<div class="map-wrapper mb-3">
+    <iframe
+        width="100%"
+        height="250"
+        frameborder="0"
+        scrolling="no"
+        marginheight="0"
+        marginwidth="0"
+        src="https://www.openstreetmap.org/export/embed.html?bbox={{ reservation.longitude_depart|stringformat:'f' }},{{ reservation.latitude_depart|stringformat:'f' }},{{ reservation.longitude_depart|stringformat:'f' }},{{ reservation.latitude_depart|stringformat:'f' }}&layer=mapnik&marker={{ reservation.latitude_depart|stringformat:'f' }},{{ reservation.longitude_depart|stringformat:'f' }}">
+    </iframe>
+    <small><a href="https://www.openstreetmap.org/?mlat={{ reservation.latitude_depart|stringformat:'f' }}&mlon={{ reservation.longitude_depart|stringformat:'f' }}" target="_blank">Voir sur OpenStreetMap</a></small>
+</div>
+{% endif %}
+
+{% if reservation.latitude_retour and reservation.longitude_retour %}
+<div class="map-wrapper">
+    <iframe
+        width="100%"
+        height="250"
+        frameborder="0"
+        scrolling="no"
+        marginheight="0"
+        marginwidth="0"
+        src="https://www.openstreetmap.org/export/embed.html?bbox={{ reservation.longitude_retour|stringformat:'f' }},{{ reservation.latitude_retour|stringformat:'f' }},{{ reservation.longitude_retour|stringformat:'f' }},{{ reservation.latitude_retour|stringformat:'f' }}&layer=mapnik&marker={{ reservation.latitude_retour|stringformat:'f' }},{{ reservation.longitude_retour|stringformat:'f' }}">
+    </iframe>
+    <small><a href="https://www.openstreetmap.org/?mlat={{ reservation.latitude_retour|stringformat:'f' }}&mlon={{ reservation.longitude_retour|stringformat:'f' }}" target="_blank">Voir sur OpenStreetMap</a></small>
+</div>
+{% endif %}
 {% endblock %}

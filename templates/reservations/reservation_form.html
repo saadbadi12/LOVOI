@@ -14,42 +14,36 @@
     border-color: #ff4d6d;
     box-shadow: 0 0 0 4px rgba(255, 77, 109, 0.1);
 }
-.location-input-wrapper {
-    position: relative;
+.location-map-wrapper {
+    margin-bottom: 15px;
 }
-.location-dropdown {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
+.map-container {
+    height: 300px;
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-    z-index: 1000;
-    max-height: 280px;
-    overflow-y: auto;
-    display: none;
-    margin-top: 5px;
-    border: 2px solid #ff4d6d;
+    border: 2px solid #eee;
+    overflow: hidden;
+    background: #f0f0f0;
 }
-.location-dropdown.active {
-    display: block;
+.map-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
 }
-.location-item {
-    padding: 14px 18px;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    transition: all 0.2s ease;
+.selected-location {
+    background: #fff0f3;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 8px;
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
 }
-.location-item:hover, .location-item.selected {
-    background: #fff0f3;
+.selected-location i {
     color: #ff4d6d;
 }
-.location-item-icon {
-    font-size: 1.5rem;
+.coords-display {
+    font-size: 0.8rem;
+    color: #888;
 }
 </style>
 {% endblock %}
@@ -88,6 +82,7 @@
 
                     <form method="post" id="reservation-form">
                         {% csrf_token %}
+                        <input type="hidden" name="vehicule" value="{{ vehicule.id }}">
 
                         <!-- Dates -->
                         <div class="row mb-4">
@@ -101,20 +96,66 @@
                             </div>
                         </div>
 
-                        <!-- Locations -->
+                        <!-- Location Maps -->
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">📍 Lieu de départ</label>
-                                <div class="location-input-wrapper">
-                                    <input type="text" name="lieu_depart" id="lieu_depart" class="form-control" placeholder="Ex: Casablanca Centre" required autocomplete="off">
-                                    <div class="location-dropdown" id="depart-dropdown"></div>
+                                <div class="location-map-wrapper">
+                                    <div id="map-depart" class="map-container">
+                                        <iframe
+                                            id="iframe-depart"
+                                            width="100%"
+                                            height="300"
+                                            frameborder="0"
+                                            scrolling="yes"
+                                            marginheight="0"
+                                            marginwidth="0"
+                                            src="https://www.openstreetmap.org/export/embed.html?bbox=-9.0,29.0,0.0,36.0&layer=mapnik"
+                                            style="border: none;">
+                                        </iframe>
+                                    </div>
+                                    <input type="hidden" name="latitude_depart" id="latitude_depart">
+                                    <input type="hidden" name="longitude_depart" id="longitude_depart">
+                                    <input type="text" name="lieu_depart" id="lieu_depart" class="form-control mt-2" placeholder="Ex: Casablanca Centre" required>
+                                    <small class="text-muted">Cliquez sur la carte ci-dessus pour obtenir les coordonnées</small>
+                                </div>
+                                <div class="selected-location" id="selected-depart" style="display: none;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <div>
+                                        <strong>Coordonnées: </strong>
+                                        <span id="coords-depart"></span>
+                                        <a id="open-maps-depart" href="#" target="_blank" class="btn btn-sm btn-outline-primary ms-2">Google Maps</a>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">📍 Lieu de retour</label>
-                                <div class="location-input-wrapper">
-                                    <input type="text" name="lieu_retour" id="lieu_retour" class="form-control" placeholder="Ex: Marrakech Gueliz" required autocomplete="off">
-                                    <div class="location-dropdown" id="retour-dropdown"></div>
+                                <div class="location-map-wrapper">
+                                    <div id="map-retour" class="map-container">
+                                        <iframe
+                                            id="iframe-retour"
+                                            width="100%"
+                                            height="300"
+                                            frameborder="0"
+                                            scrolling="yes"
+                                            marginheight="0"
+                                            marginwidth="0"
+                                            src="https://www.openstreetmap.org/export/embed.html?bbox=-9.0,29.0,0.0,36.0&layer=mapnik"
+                                            style="border: none;">
+                                        </iframe>
+                                    </div>
+                                    <input type="hidden" name="latitude_retour" id="latitude_retour">
+                                    <input type="hidden" name="longitude_retour" id="longitude_retour">
+                                    <input type="text" name="lieu_retour" id="lieu_retour" class="form-control mt-2" placeholder="Ex: Marrakech Gueliz" required>
+                                    <small class="text-muted">Cliquez sur la carte ci-dessus pour obtenir les coordonnées</small>
+                                </div>
+                                <div class="selected-location" id="selected-retour" style="display: none;">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <div>
+                                        <strong>Coordonnées: </strong>
+                                        <span id="coords-retour"></span>
+                                        <a id="open-maps-retour" href="#" target="_blank" class="btn btn-sm btn-outline-primary ms-2">Google Maps</a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -158,61 +199,47 @@
     </div>
 </div>
 
+<script src="{% static 'leaflet/leaflet.js' %}"></script>
 <script>
-// Moroccan cities for location suggestions
-const cities = [
-    { name: "Casablanca Centre", icon: "🏙️" },
-    { name: "Casablanca Aéroport", icon: "✈️" },
-    { name: "Marrakech Gueliz", icon: "🌴" },
-    { name: "Marrakech Médina", icon: "🕌" },
-    { name: "Rabat Hay Riad", icon: "🏛️" },
-    { name: "Rabat Agdal", icon: "📚" },
-    { name: "Fès Centre", icon: "🏰" },
-    { name: "Tanger Centre", icon: "🌊" },
-    { name: "Tanger Port", icon: "⛴️" },
-    { name: "Agadir Plage", icon: "🏖️" },
-    { name: "Agadir Centre", icon: "🏙️" },
-    { name: "Meknès", icon: "🏛️" },
-    { name: "Dakhla", icon: "🐚" },
-    { name: "Laâyoune", icon: "🏜️" },
-];
+// Initialize maps with Leaflet
+const moroccoCenter = [31.7917, -7.0926];
+const zoomLevel = 6;
 
-function setupLocationInput(inputId, dropdownId) {
-    const input = document.getElementById(inputId);
-    const dropdown = document.getElementById(dropdownId);
+// Departure map
+const mapDepart = L.map('map-depart').setView(moroccoCenter, zoomLevel);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(mapDepart);
 
-    input.addEventListener('input', function() {
-        const query = this.value.toLowerCase();
-        dropdown.innerHTML = '';
-        dropdown.classList.remove('active');
+let markerDepart = null;
+mapDepart.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+    if (markerDepart) mapDepart.removeLayer(markerDepart);
+    markerDepart = L.marker(e.latlng).addTo(mapDepart);
+    document.getElementById('latitude_depart').value = lat.toFixed(6);
+    document.getElementById('longitude_depart').value = lng.toFixed(6);
+    document.getElementById('coords-depart').textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+    document.getElementById('open-maps-depart').href = 'https://www.google.com/maps?q=' + lat.toFixed(6) + ',' + lng.toFixed(6);
+    document.getElementById('selected-depart').style.display = 'flex';
+});
 
-        if (query.length < 2) return;
+// Return map
+const mapRetour = L.map('map-retour').setView(moroccoCenter, zoomLevel);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(mapRetour);
 
-        const filtered = cities.filter(c => c.name.toLowerCase().includes(query));
-
-        if (filtered.length === 0) return;
-
-        filtered.forEach(city => {
-            const item = document.createElement('div');
-            item.className = 'location-item';
-            item.innerHTML = `<span class="location-item-icon">${city.icon}</span><span>${city.name}</span>`;
-            item.addEventListener('click', () => {
-                input.value = city.name;
-                dropdown.classList.remove('active');
-            });
-            dropdown.appendChild(item);
-        });
-
-        dropdown.classList.add('active');
-    });
-
-    input.addEventListener('blur', () => {
-        setTimeout(() => dropdown.classList.remove('active'), 200);
-    });
-}
-
-setupLocationInput('lieu_depart', 'depart-dropdown');
-setupLocationInput('lieu_retour', 'retour-dropdown');
+let markerRetour = null;
+mapRetour.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+    if (markerRetour) mapRetour.removeLayer(markerRetour);
+    markerRetour = L.marker(e.latlng).addTo(mapRetour);
+    document.getElementById('latitude_retour').value = lat.toFixed(6);
+    document.getElementById('longitude_retour').value = lng.toFixed(6);
+    document.getElementById('coords-retour').textContent = lat.toFixed(6) + ', ' + lng.toFixed(6);
+    document.getElementById('open-maps-retour').href = 'https://www.google.com/maps?q=' + lat.toFixed(6) + ',' + lng.toFixed(6);
+    document.getElementById('selected-retour').style.display = 'flex';
+});
 
 // Price calculator
 const dateDebut = document.querySelector('input[name="date_debut"]');
@@ -267,5 +294,16 @@ function calculatePrice() {
 
 dateDebut.addEventListener('change', calculatePrice);
 dateFin.addEventListener('change', calculatePrice);
+
+// Form validation - coordinates optional
+document.getElementById('reservation-form').addEventListener('submit', function(e) {
+    const lieuDep = document.getElementById('lieu_depart').value;
+    const lieuRet = document.getElementById('lieu_retour').value;
+
+    if (!lieuDep || !lieuRet) {
+        e.preventDefault();
+        alert('Veuillez entrer les lieux de départ et de retour.');
+    }
+});
 </script>
 {% endblock %}

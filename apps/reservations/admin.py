@@ -12,9 +12,9 @@ class SlotAdmin(admin.ModelAdmin):
 @admin.register(Reservation)
 class ReservationAdmin(admin.ModelAdmin):
     list_display = ('id', 'client', 'vehicule', 'date_debut', 'date_fin',
-                    'statut_reservation', 'montant_total')
+                    'statut_reservation', 'montant_total', 'latitude_depart', 'longitude_depart')
     list_filter = ('statut_reservation', 'date_debut', 'date_fin')
-    search_fields = ('client__username', 'vehicule__immatriculation')
+    search_fields = ('client__username', 'vehicule__immatriculation', 'lieu_depart', 'lieu_retour')
     raw_id_fields = ('client', 'vehicule', 'slot')
 
 
@@ -25,8 +25,9 @@ class ContratAdmin(admin.ModelAdmin):
 
 @admin.register(Livraison)
 class LivraisonAdmin(admin.ModelAdmin):
-    list_display = ('id', 'reservation', 'livreur', 'type', 'date_livraison', 'statut')
+    list_display = ('id', 'reservation', 'livreur', 'type', 'date_livraison', 'statut', 'latitude', 'longitude')
     list_filter = ('statut', 'type')
+    search_fields = ('lieu_livraison', 'reservation__client__username')
     raw_id_fields = ('reservation', 'livreur')
 
 

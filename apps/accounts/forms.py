@@ -64,6 +64,14 @@ class ClientRegistrationForm(UserCreationForm):
         return user
 
 
+class ProfileForm(forms.ModelForm):
+    """Form for users to edit their own profile."""
+    class Meta:
+        model = Utilisateur
+        fields = ('email', 'first_name', 'last_name', 'telephone',
+                  'adresse', 'permis_numero', 'permis_date')
+
+
 class NotificationForm(forms.ModelForm):
     class Meta:
         model = Notification

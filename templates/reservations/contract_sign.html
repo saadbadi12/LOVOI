@@ -75,6 +75,76 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     box-shadow: 0 15px 50px rgba(255,107,107,0.5);
 }
 
+/* Payment Modal */
+.modal-payment {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-payment.active {
+    display: flex;
+}
+
+.payment-modal-content {
+    background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+    border-radius: 25px;
+    padding: 40px;
+    max-width: 500px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 2px solid rgba(255,255,255,0.1);
+}
+
+.card-input {
+    background: rgba(255,255,255,0.08);
+    border: 2px solid rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 15px 18px;
+    color: white;
+    font-size: 1rem;
+    width: 100%;
+}
+
+.card-input:focus {
+    border-color: var(--primary);
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
+}
+
+.card-input::placeholder { color: rgba(255,255,255,0.4); }
+
+.card-display {
+    background: linear-gradient(135deg, #2d3436, #636e72);
+    border-radius: 20px;
+    padding: 25px;
+    color: white;
+    margin-bottom: 25px;
+}
+
+.card-chip {
+    width: 45px;
+    height: 35px;
+    background: linear-gradient(135deg: #d4af37, #f4d03f);
+    border-radius: 6px;
+    margin-bottom: 15px;
+}
+
+.card-number-display {
+    font-family: 'Courier New', monospace;
+    font-size: 1.3rem;
+    letter-spacing: 2px;
+    margin: 15px 0;
+}
+
 .btn-pay {
     background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
     border: none;
@@ -83,13 +153,80 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     font-weight: 700;
     font-size: 1.1rem;
     color: white;
-    box-shadow: 0 10px 40px rgba(78,205,196,0.4);
-    transition: all 0.4s ease;
+    width: 100%;
+    transition: all 0.3s ease;
 }
 
 .btn-pay:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 15px 50px rgba(78,205,196,0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(78,205,196,0.4);
+}
+
+.btn-close-modal {
+    background: transparent;
+    border: 2px solid rgba(255,255,255,0.3);
+    color: white;
+    padding: 10px 25px;
+    border-radius: 50px;
+    cursor: pointer;
+}
+
+.btn-close-modal:hover {
+    background: rgba(255,255,255,0.1);
+}
+
+/* Success Modal */
+.modal-success {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.85);
+    z-index: 99999;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-success.active {
+    display: flex;
+}
+
+.success-content {
+    background: linear-gradient(135deg, #1a1a2e, #2d2d44);
+    border-radius: 25px;
+    padding: 50px;
+    text-align: center;
+    max-width: 450px;
+    border: 2px solid rgba(78,205,196,0.3);
+}
+
+.success-icon {
+    font-size: 5rem;
+    color: #4ecdc4;
+    margin-bottom: 20px;
+    animation: bounce 1s ease;
+}
+
+@keyframes bounce {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+}
+
+.spinner {
+    border: 4px solid rgba(255,255,255,0.1);
+    border-top: 4px solid #4ecdc4;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 </style>
 {% endblock %}
@@ -101,7 +238,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
             <!-- Header -->
             <div class="text-center mb-5">
                 <h1 class="text-white fw-bold">Contrat de Location</h1>
-                <p class="text-white-50">Réservation #{{ vehicule.id }} - {{ vehicule.marque }} {{ vehicule.modele }}</p>
+                <p class="text-white-50">Réservation - {{ vehicule.marque }} {{ vehicule.modele }}</p>
             </div>
 
             <!-- Contract Summary -->
@@ -129,6 +266,12 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <p class="text-white fw-bold">{{ lieu_retour }}</p>
                     </div>
                 </div>
+                <hr style="border-color: rgba(255,255,255,0.1);">
+                <div class="text-center">
+                    <p class="text-white-50 mb-1">Montant total</p>
+                    <h2 class="text-success fw-bold">{{ montant_total }} MAD</h2>
+                    <p class="text-warning small">+ {{ vehicule.caution }} MAD caution</p>
+                </div>
             </div>
 
             <!-- Contract Terms -->
@@ -136,37 +279,18 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 <h5 class="text-warning mb-3"><i class="fas fa-file-contract me-2"></i>Conditions de Location</h5>
                 <div class="contract-box">
                     <h6 class="text-white mb-3">ARTICLE 1 - OBJET</h6>
-                    <p class="text-white-50 small">Le présent contrat a pour objet la location d'un véhicule automobile entre le loueur et le locataire.</p>
+                    <p class="text-white-50 small">Le présent contrat a pour objet la location d'un véhicule automobile.</p>
 
                     <h6 class="text-white mb-3 mt-4">ARTICLE 2 - DURÉE</h6>
-                    <p class="text-white-50 small">La location est consentie pour une durée de {{ nombre_jours }} jour(s), du {{ date_debut }} au {{ date_fin }}.</p>
+                    <p class="text-white-50 small">Location pour {{ nombre_jours }} jour(s), du {{ date_debut }} au {{ date_fin }}.</p>
 
                     <h6 class="text-white mb-3 mt-4">ARTICLE 3 - TARIF</h6>
-                    <p class="text-white-50 small">Le montant total de la location est de <strong class="text-success">{{ montant_total }} MAD</strong>, incluant une caution de <strong class="text-warning">{{ vehicule.caution }} MAD</strong> restituée en fin de location.</p>
-
-                    <h6 class="text-white mb-3 mt-4">ARTICLE 4 - CONDITIONS</h6>
-                    <ul class="terms-list small">
-                        <li>Le locataire doit être âgé de 21 ans minimum et être titutulaire d'un permis de conduire valide depuis plus d'un an.</li>
-                        <li>Le véhicule est livré avec le plein de carburant et doit être restitué de même.</li>
-                        <li>Le locataire s'engage à ne pas sous-louer le véhicule sans accord écrit du loueur.</li>
-                        <li>En cas d'accident, le locataire doit immédiatement prévenir le loueur et la police.</li>
-                        <li>Le véhicule doit être restitué aux date, heure et lieu convenus.</li>
-                        <li>Les frais de retard sont calculés au tarif journalier majoré de 50%.</li>
-                    </ul>
-
-                    <h6 class="text-white mb-3 mt-4">ARTICLE 5 - ASSURANCE</h6>
-                    <p class="text-white-50 small">Le véhicule est assuré au tiers. Une assurance tous risques peut être souscrite moyennant un supplément quotidien.</p>
-
-                    <h6 class="text-white mb-3 mt-4">ARTICLE 6 - CAUTION</h6>
-                    <p class="text-white-50 small">Une caution de {{ vehicule.caution }} MAD est versée à la remise du véhicule et restituée dans les 15 jours ouvrables après vérification de l'état du véhicule.</p>
-
-                    <h6 class="text-white mb-3 mt-4">ARTICLE 7 - RESPONSABILITÉS</h6>
-                    <p class="text-white-50 small">Le locataire est responsable de tout dommage au véhicule durante la location, sauf assurances souscrites.</p>
+                    <p class="text-white-50 small">Montant: <strong class="text-success">{{ montant_total }} MAD</strong></p>
                 </div>
             </div>
 
             <!-- Signature Section -->
-            <form method="post" action="{% url 'reservations:contract_sign' vehicule.id %}">
+            <form method="post" id="contract-form" action="{% url 'reservations:contract_sign_process' vehicule.id %}">
                 {% csrf_token %}
                 <input type="hidden" name="date_debut" value="{{ date_debut }}">
                 <input type="hidden" name="date_fin" value="{{ date_fin }}">
@@ -175,7 +299,6 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 
                 <div class="glass-card p-4 mb-4 text-center">
                     <h5 class="text-warning mb-4"><i class="fas fa-pen-fancy me-2"></i>Signature Electronique</h5>
-                    <p class="text-white-50 mb-4">En signant ci-dessous, j'accepte les conditions de location détaillées dans ce contrat.</p>
 
                     <div class="signature-area">
                         <input type="text" name="signature_name" id="signature-name"
@@ -187,13 +310,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <div class="form-check mt-4 text-start">
                         <input class="form-check-input" type="checkbox" id="accept-terms" required>
                         <label class="form-check-label text-white-50" for="accept-terms">
-                            J'ai lu et j'accepte les conditions de location ci-dessus
+                            J'accepte les conditions de location
                         </label>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-sign w-100 mb-3" id="sign-btn" disabled>
-                    <i class="fas fa-file-signature me-2"></i>Signer et Continuer vers Paiement
+                <button type="button" class="btn-sign w-100 mb-3" id="proceed-btn" disabled onclick="openPaymentModal()">
+                    <i class="fas fa-credit-card me-2"></i>Procéder au Paiement
                 </button>
             </form>
 
@@ -206,9 +329,165 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     </div>
 </div>
 
+<!-- Payment Modal -->
+<div class="modal-payment" id="paymentModal">
+    <div class="payment-modal-content">
+        <div class="text-center mb-4">
+            <h3 class="text-white fw-bold"><i class="fas fa-lock me-2 text-warning"></i>Paiement Sécurisé</h3>
+            <p class="text-white-50">Montant: <strong class="text-success">{{ montant_total }} MAD</strong></p>
+        </div>
+
+        <!-- Card Preview -->
+        <div class="card-display">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="card-chip"></div>
+                <i class="fab fa-cc-visa fa-2x"></i>
+            </div>
+            <div class="card-number-display" id="card-preview">•••• •••• •••• ••••</div>
+            <div class="d-flex justify-content-between">
+                <div>
+                    <small class="text-white-50">Titulaire</small>
+                    <div id="name-preview" class="fw-bold">VOTRE NOM</div>
+                </div>
+                <div>
+                    <small class="text-white-50">Expire</small>
+                    <div id="expiry-preview" class="fw-bold">MM/YY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Form -->
+        <form id="payment-form">
+            <div class="mb-3">
+                <label class="text-white-50 mb-2 small">Numéro de carte</label>
+                <input type="text" id="modal-card-number" class="card-input"
+                       placeholder="1234 5678 9012 3456" maxlength="19"
+                       oninput="updateModalCard(this.value)">
+            </div>
+            <div class="mb-3">
+                <label class="text-white-50 mb-2 small">Nom sur la carte</label>
+                <input type="text" id="modal-card-name" class="card-input"
+                       placeholder="JEAN DUPONT" oninput="updateModalName(this.value)">
+            </div>
+            <div class="row mb-4">
+                <div class="col-6">
+                    <label class="text-white-50 mb-2 small">Expiration</label>
+                    <input type="text" id="modal-card-expiry" class="card-input"
+                           placeholder="MM/YY" maxlength="5" oninput="updateModalExpiry(this.value)">
+                </div>
+                <div class="col-6">
+                    <label class="text-white-50 mb-2 small">CVV</label>
+                    <input type="text" id="modal-card-cvv" class="card-input"
+                           placeholder="123" maxlength="4">
+                </div>
+            </div>
+
+            <button type="button" class="btn-pay mb-3" onclick="processPayment()">
+                <i class="fas fa-lock me-2"></i>Payer {{ montant_total }} MAD
+            </button>
+            <div class="text-center">
+                <button type="button" class="btn-close-modal" onclick="closePaymentModal()">Annuler</button>
+            </div>
+        </form>
+
+        <div class="text-center mt-4">
+            <small class="text-white-50"><i class="fas fa-shield-alt text-success me-1"></i>Paiement 100% sécurisé</small>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal-success" id="successModal">
+    <div class="success-content">
+        <div class="success-icon">✓</div>
+        <h3 class="text-white fw-bold mb-3">Réservation Confirmée!</h3>
+        <p class="text-white-50 mb-4">Votre véhicule {{ vehicule.marque }} {{ vehicule.modele }} est réservé du {{ date_debut }} au {{ date_fin }}.</p>
+        <p class="text-warning mb-4"><i class="fas fa-truck me-2"></i>Un livreur vous contactera pour la livraison.</p>
+        <a href="{% url 'reservations:my_reservations' %}" class="btn-pay d-inline-block text-decoration-none">
+            <i class="fas fa-list me-2"></i>Voir mes réservations
+        </a>
+    </div>
+</div>
+
 <script>
+// Enable proceed button when terms accepted
 document.getElementById('accept-terms').addEventListener('change', function() {
-    document.getElementById('sign-btn').disabled = !this.checked;
+    document.getElementById('proceed-btn').disabled = !this.checked;
 });
+
+// Payment Modal Functions
+function openPaymentModal() {
+    document.getElementById('paymentModal').classList.add('active');
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.remove('active');
+}
+
+function updateModalCard(value) {
+    let v = value.replace(/\D/g, '');
+    let formatted = '';
+    for (let i = 0; i < v.length && i < 16; i++) {
+        if (i > 0 && i % 4 === 0) formatted += ' ';
+        formatted += v[i];
+    }
+    document.getElementById('modal-card-number').value = formatted;
+    document.getElementById('card-preview').textContent = formatted.padEnd(19, '•') || '•••• •••• •••• ••••';
+}
+
+function updateModalName(value) {
+    document.getElementById('name-preview').textContent = value.toUpperCase() || 'VOTRE NOM';
+}
+
+function updateModalExpiry(value) {
+    let v = value.replace(/\D/g, '');
+    if (v.length >= 2) {
+        v = v.substring(0, 2) + '/' + v.substring(2, 4);
+    }
+    document.getElementById('modal-card-expiry').value = v;
+    document.getElementById('expiry-preview').textContent = v || 'MM/YY';
+}
+
+function processPayment() {
+    const cardNumber = document.getElementById('modal-card-number').value.replace(/\s/g, '');
+    const cardName = document.getElementById('modal-card-name').value;
+    const cardExpiry = document.getElementById('modal-card-expiry').value;
+    const cardCvv = document.getElementById('modal-card-cvv').value;
+
+    // Validation
+    if (cardNumber.length < 16) {
+        alert('Veuillez entrer un numéro de carte valide (16 chiffres)');
+        return;
+    }
+    if (!cardName) {
+        alert('Veuillez entrer le nom sur la carte');
+        return;
+    }
+    if (cardExpiry.length < 5) {
+        alert('Veuillez entrer une date d\'expiration valide');
+        return;
+    }
+    if (cardCvv.length < 3) {
+        alert('Veuillez entrer le CVV valide');
+        return;
+    }
+
+    // Show success modal
+    closePaymentModal();
+
+    // Add hidden fields for payment to form
+    const form = document.getElementById('contract-form');
+    const paymentInput = document.createElement('input');
+    paymentInput.type = 'hidden';
+    paymentInput.name = 'payment_method';
+    paymentInput.value = 'CARTE_BANCAIRE';
+    form.appendChild(paymentInput);
+
+    // Change form action to process_payment
+    form.action = "{% url 'reservations:process_payment' vehicule.id %}";
+
+    // Submit the form
+    form.submit();
+}
 </script>
 {% endblock %}

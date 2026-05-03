@@ -1,6 +1,40 @@
 {% extends 'base.html' %}
 {% block title %}Livraison - LOVOI{% endblock %}
 
+{% block extra_css %}
+<style>
+.location-map-wrapper {
+    margin-bottom: 15px;
+}
+.map-container {
+    height: 300px;
+    border-radius: 12px;
+    border: 2px solid #eee;
+}
+.map-instructions {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin-bottom: 5px;
+}
+.selected-location {
+    background: #fff0f3;
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.selected-location i {
+    color: #ff4d6d;
+}
+.coords-display {
+    font-size: 0.8rem;
+    color: #888;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container mt-4">
     <h1>Planifier Livraison</h1>
@@ -38,13 +72,62 @@
                         <input type="time" name="heure_livraison" class="form-control" required>
                     </div>
                 </div>
+
+                <!-- Location Map -->
                 <div class="mb-3">
-                    <label>Lieu de livraison</label>
-                    <input type="text" name="lieu_livraison" class="form-control" required>
+                    <label class="fw-bold">📍 Lieu de livraison</label>
+                    <p class="map-instructions">Cliquez sur la carte pour sélectionner le lieu de livraison</p>
+                    <div class="location-map-wrapper">
+                        <div id="map-livraison" class="map-container"></div>
+                        <input type="hidden" name="latitude" id="latitude">
+                        <input type="hidden" name="longitude" id="longitude">
+                        <input type="text" name="lieu_livraison" id="lieu_livraison" class="form-control mt-2" placeholder="Adresse ou nom du lieu" required>
+                    </div>
+                    <div class="selected-location" id="selected-livraison" style="display: none;">
+                        <i class="fas fa-map-marker-alt"></i>
+                        <div>
+                            <strong>Position sélectionnée</strong>
+                            <div class="coords-display" id="coords-livraison"></div>
+                        </div>
+                    </div>
                 </div>
+
                 <button type="submit" class="btn btn-success">Enregistrer</button>
             </form>
         </div>
     </div>
 </div>
+
+<script>
+// Initialize map centered on Morocco
+const moroccoCenter = [31.7917, -7.0926];
+const zoomLevel = 6;
+
+const mapLivraison = L.map('map-livraison').setView(moroccoCenter, zoomLevel);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+    attribution: '© OpenStreetMap contributors'
+}).addTo(mapLivraison);
+let markerLivraison = null;
+
+mapLivraison.on('click', function(e) {
+    const { lat, lng } = e.latlng;
+    if (markerLivraison) mapLivraison.removeLayer(markerLivraison);
+    markerLivraison = L.marker(e.latlng).addTo(mapLivraison);
+    document.getElementById('latitude').value = lat.toFixed(6);
+    document.getElementById('longitude').value = lng.toFixed(6);
+    document.getElementById('coords-livraison').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
+    document.getElementById('selected-livraison').style.display = 'flex';
+});
+
+// Form validation
+document.querySelector('form').addEventListener('submit', function(e) {
+    const lat = document.getElementById('latitude').value;
+    const lng = document.getElementById('longitude').value;
+
+    if (!lat || !lng) {
+        e.preventDefault();
+        alert('Veuillez sélectionner le lieu de livraison sur la carte.');
+    }
+});
+</script>
 {% endblock %}

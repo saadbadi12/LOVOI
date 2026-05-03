@@ -4,8 +4,67 @@
 {% block content %}
 <div class="container mt-4">
     <h1>Mon Profil</h1>
+
+    {% if messages %}
+    <div class="alert alert-success">
+        {% for message in messages %}
+            {{ message }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
     <div class="card mt-4">
         <div class="card-body">
+            {% if form %}
+            <!-- Edit Mode -->
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Nom d'utilisateur</label>
+                        <input type="text" class="form-control" value="{{ user.username }}" disabled>
+                        <small class="text-muted">Le nom d'utilisateur ne peut pas être modifié</small>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Email</label>
+                        <input type="email" name="email" class="form-control" value="{{ form.email.value|default:user.email }}" required>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Prénom</label>
+                        <input type="text" name="first_name" class="form-control" value="{{ form.first_name.value|default:user.first_name }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Nom</label>
+                        <input type="text" name="last_name" class="form-control" value="{{ form.last_name.value|default:user.last_name }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Téléphone</label>
+                        <input type="text" name="telephone" class="form-control" value="{{ form.telephone.value|default:user.telephone }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Adresse</label>
+                        <input type="text" name="adresse" class="form-control" value="{{ form.adresse.value|default:user.adresse }}">
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label>Numéro de permis</label>
+                        <input type="text" name="permis_numero" class="form-control" value="{{ form.permis_numero.value|default:user.permis_numero }}">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label>Date de délivrance</label>
+                        <input type="date" name="permis_date" class="form-control" value="{{ form.permis_date.value|default:user.permis_date|date:'Y-m-d' }}">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-success">Enregistrer</button>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-secondary">Annuler</a>
+            </form>
+            {% else %}
+            <!-- View Mode -->
             <div class="row">
                 <div class="col-md-6">
                     <p><strong>Nom d'utilisateur:</strong> {{ user.username }}</p>
@@ -14,15 +73,16 @@
                     <p><strong>Nom:</strong> {{ user.last_name }}</p>
                 </div>
                 <div class="col-md-6">
-                    <p><strong>Téléphone:</strong> {{ user.telephone }}</p>
-                    <p><strong>Adresse:</strong> {{ user.adresse }}</p>
-                    <p><strong>Numéro de permis:</strong> {{ user.permis_numero }}</p>
-                    <p><strong>Date de délivrance:</strong> {{ user.permis_date }}</p>
+                    <p><strong>Téléphone:</strong> {{ user.telephone|default:"-" }}</p>
+                    <p><strong>Adresse:</strong> {{ user.adresse|default:"-" }}</p>
+                    <p><strong>Numéro de permis:</strong> {{ user.permis_numero|default:"-" }}</p>
+                    <p><strong>Date de délivrance:</strong> {{ user.permis_date|default:"-" }}</p>
                     <p><strong>Rôle:</strong> {{ user.get_role_display }}</p>
                     <p><strong>Inscrit le:</strong> {{ user.date_inscription }}</p>
                 </div>
             </div>
-            <a href="#" class="btn btn-primary mt-3">Modifier le profil</a>
+            <a href="{% url 'accounts:profile' %}?edit=1" class="btn btn-primary mt-3">Modifier le profil</a>
+            {% endif %}
         </div>
     </div>
 </div>

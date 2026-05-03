@@ -48,6 +48,10 @@ class Reservation(models.Model):
     date_fin = models.DateField(_('Date de fin'))
     lieu_depart = models.CharField(_('Lieu de départ'), max_length=255)
     lieu_retour = models.CharField(_('Lieu de retour'), max_length=255)
+    latitude_depart = models.DecimalField(_('Latitude départ'), max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude_depart = models.DecimalField(_('Longitude départ'), max_digits=9, decimal_places=6, null=True, blank=True)
+    latitude_retour = models.DecimalField(_('Latitude retour'), max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude_retour = models.DecimalField(_('Longitude retour'), max_digits=9, decimal_places=6, null=True, blank=True)
     statut_reservation = models.CharField(_('Statut'), max_length=20,
                                          choices=STATUT_CHOICES, default='EN_ATTENTE')
     montant_total = models.DecimalField(_('Montant total (MAD)'), max_digits=10,
@@ -155,7 +159,9 @@ class Livraison(models.Model):
     """Vehicle delivery/recovery."""
     STATUT_CHOICES = [
         ('EN_ATTENTE', _('En attente')),
+        ('EN_COURS', _('En cours')),
         ('LIVREE', _('Livrée')),
+        ('TERMINEE', _('Terminée')),
         ('ECHEC', _('Échec')),
     ]
 
@@ -173,7 +179,9 @@ class Livraison(models.Model):
     date_livraison = models.DateField(_('Date'))
     heure_livraison = models.TimeField(_('Heure'))
     lieu_livraison = models.CharField(_('Lieu'), max_length=255)
-    statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='PLANIFIEE')
+    latitude = models.DecimalField(_('Latitude'), max_digits=9, decimal_places=6, null=True, blank=True)
+    longitude = models.DecimalField(_('Longitude'), max_digits=9, decimal_places=6, null=True, blank=True)
+    statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')
     motif_echec = models.TextField(_("Motif d'échec"), blank=True)
     kilometrage_depart = models.IntegerField(_('Kilométrage départ'), null=True, blank=True)
     kilometrage_retour = models.IntegerField(_('Kilométrage retour'), null=True, blank=True)
