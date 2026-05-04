@@ -1,35 +1,90 @@
 {% extends 'base.html' %}
 {% block title %}États des Lieux - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>États des Lieux</h1>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Réservation</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Employé</th>
-                <th>Kilométrage</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for e in etats %}
-            <tr>
-                <td>{{ e.id }}</td>
-                <td>{{ e.reservation.id }}</td>
-                <td>{{ e.get_type_display }}</td>
-                <td>{{ e.date|date:"d/m/Y H:i" }}</td>
-                <td>{{ e.employe|default:"-" }}</td>
-                <td>{{ e.kilometrage }} km</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="text-center">Aucun état des lieux.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">États des Lieux</h1>
+
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Réservation</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Employé</th>
+                    <th>Kilométrage</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for e in etats %}
+                <tr>
+                    <td class="fw-bold">#{{ e.id }}</td>
+                    <td>#{{ e.reservation.id }}</td>
+                    <td>{{ e.get_type_display }}</td>
+                    <td class="text-white-50">{{ e.date|date:"d/m/Y H:i" }}</td>
+                    <td>{{ e.employe|default:"-" }}</td>
+                    <td class="text-warning">{{ e.kilometrage }} km</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-white-50 py-4">Aucun état des lieux.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -1,83 +1,297 @@
 {% extends 'base.html' %}
 {% load static %}
 
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.9);
+        padding: 16px 20px;
+    }
+    .glass-table tbody td:first-child {
+        color: #4ecdc4;
+        font-weight: 500;
+        width: 40%;
+    }
+    .badge-coral {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.3);
+    }
+    .badge-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.3);
+    }
+    .btn-glass {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.4);
+        transition: all 0.3s ease;
+        padding: 12px 28px;
+        border-radius: 12px;
+    }
+    .btn-glass:hover {
+        background: #ff6b6b;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+    }
+    .btn-glass-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.4);
+        transition: all 0.3s ease;
+    }
+    .btn-glass-teal:hover {
+        background: #4ecdc4;
+        color: #1a1a2e;
+    }
+    .btn-outline-glass {
+        background: transparent;
+        color: rgba(255,255,255,0.7);
+        border: 1px solid rgba(255,255,255,0.2);
+        transition: all 0.3s ease;
+        padding: 10px 24px;
+        border-radius: 12px;
+    }
+    .btn-outline-glass:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.4);
+        color: white;
+    }
+    .breadcrumb-glass {
+        background: rgba(255,255,255,0.05);
+        border-radius: 12px;
+        padding: 12px 20px;
+    }
+    .breadcrumb-item a {
+        color: #4ecdc4;
+        text-decoration: none;
+        transition: color 0.3s ease;
+    }
+    .breadcrumb-item a:hover {
+        color: #ff6b6b;
+    }
+    .breadcrumb-item.active {
+        color: rgba(255,255,255,0.6);
+    }
+    .breadcrumb-item + .breadcrumb-item::before {
+        color: rgba(255,255,255,0.3);
+    }
+    .price-card {
+        background: linear-gradient(135deg, rgba(255,107,107,0.15), rgba(78,205,196,0.1));
+        border: 1px solid rgba(255,107,107,0.2);
+        border-radius: 16px;
+    }
+    .status-badge {
+        font-size: 0.9rem;
+        padding: 8px 16px;
+        border-radius: 30px;
+    }
+    .status-disponible {
+        background: rgba(40,167,69,0.2);
+        color: #28a745;
+        border: 1px solid rgba(40,167,69,0.3);
+    }
+    .status-indisponible {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.3);
+    }
+    .review-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+    }
+    .review-card:hover {
+        background: rgba(255,255,255,0.06);
+        transform: translateY(-4px);
+    }
+    .star-filled {
+        color: #ff6b6b;
+    }
+    .star-empty {
+        color: rgba(255,255,255,0.2);
+    }
+    h1, h2, h3, h4 {
+        color: white;
+    }
+    .text-muted {
+        color: rgba(255,255,255,0.5) !important;
+    }
+    .vehicle-image {
+        border-radius: 20px;
+        object-fit: cover;
+        width: 100%;
+        height: 100%;
+        max-height: 450px;
+    }
+    .image-placeholder {
+        height: 450px;
+        background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(78,205,196,0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 20px;
+        color: rgba(255,255,255,0.4);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <nav aria-label="breadcrumb">
-        <ol class="breadcrumb">
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb glass-card breadcrumb-glass mb-0">
             <li class="breadcrumb-item"><a href="/">Accueil</a></li>
-            <li class="breadcrumb-item"><a href="{% url 'vehicles:vehicle_list' %}">Véhicules</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'vehicles:vehicle_list' %}">Vehicules</a></li>
             <li class="breadcrumb-item active">{{ vehicule.marque }} {{ vehicule.modele }}</li>
         </ol>
     </nav>
 
-    <div class="row">
-        <div class="col-md-6">
+    <div class="row g-4">
+        <div class="col-lg-6">
             {% if vehicule.photo %}
-                <img src="{{ vehicule.photo.url }}" class="img-fluid rounded" alt="{{ vehicule }}">
+                <img src="{{ vehicule.photo.url }}" class="vehicle-image shadow" alt="{{ vehicule }}">
             {% else %}
-                <div class="bg-secondary text-white d-flex align-items-center justify-content-center rounded" style="height: 400px;">Pas d'image</div>
+                <div class="image-placeholder">
+                    <div class="text-center">
+                        <i class="fas fa-car fa-5x mb-3"></i>
+                        <p>Pas d'image disponible</p>
+                    </div>
+                </div>
             {% endif %}
         </div>
-        <div class="col-md-6">
-            <h1>{{ vehicule.marque }} {{ vehicule.modele }}</h1>
-            <span class="badge bg-{% if vehicule.statut == 'DISPONIBLE' %}success{% else %}danger{% endif %} fs-6">
-                {{ vehicule.get_statut_display }}
-            </span>
-
-            <table class="table mt-4">
-                <tr><td><strong>Année:</strong></td><td>{{ vehicule.annee }}</td></tr>
-                <tr><td><strong>Immatriculation:</strong></td><td>{{ vehicule.immatriculation }}</td></tr>
-                <tr><td><strong>Carburant:</strong></td><td>{{ vehicule.get_carburant_display }}</td></tr>
-                <tr><td><strong>Transmission:</strong></td><td>{{ vehicule.get_transmission_display }}</td></tr>
-                <tr><td><strong>Places:</strong></td><td>{{ vehicule.places }}</td></tr>
-                <tr><td><strong>Couleur:</strong></td><td>{{ vehicule.couleur }}</td></tr>
-                <tr><td><strong>Catégorie:</strong></td><td>{{ vehicule.categorie|default:"N/A" }}</td></tr>
-                <tr><td><strong>Kilométrage:</strong></td><td>{{ vehicule.kilometrage }} km</td></tr>
-            </table>
-
-            <div class="card bg-light">
-                <div class="card-body">
-                    <h3 class="text-primary">{{ vehicule.prix_journalier }} MAD <small class="text-muted">/ jour</small></h3>
-                    <p class="mb-2">Caution: <strong>{{ vehicule.caution }} MAD</strong></p>
-                    {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
-                        <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-success btn-lg w-100">Réserver ce véhicule</a>
-                    {% elif not user.is_authenticated %}
-                        <a href="{% url 'accounts:login' %}" class="btn btn-primary btn-lg w-100">Connectez-vous pour réserver</a>
+        <div class="col-lg-6">
+            <div class="glass-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h1 class="mb-2" style="color: white;">{{ vehicule.marque }} {{ vehicule.modele }}</h1>
+                        <small class="text-muted">{{ vehicule.immatriculation }}</small>
+                    </div>
+                    {% if vehicule.statut == 'DISPONIBLE' %}
+                        <span class="badge status-disponible status-badge">
+                            <i class="fas fa-circle me-1" style="font-size: 6px;"></i>{{ vehicule.get_statut_display }}
+                        </span>
                     {% else %}
-                        <button class="btn btn-secondary btn-lg w-100" disabled>Non disponible</button>
+                        <span class="badge status-indisponible status-badge">
+                            {{ vehicule.get_statut_display }}
+                        </span>
                     {% endif %}
                 </div>
-            </div>
 
-            {% if vehicule.description %}
-            <p class="mt-4">{{ vehicule.description }}</p>
-            {% endif %}
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <span class="badge badge-teal">{{ vehicule.categorie|default:"N/A" }}</span>
+                    <span class="badge badge-coral">{{ vehicule.get_carburant_display }}</span>
+                    <span class="badge" style="background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.8);">{{ vehicule.get_transmission_display }}</span>
+                </div>
 
-            {% if user.is_authenticated and user.is_admin %}
-            <div class="mt-4">
-                <a href="{% url 'vehicles:vehicle_update' vehicule.pk %}" class="btn btn-primary">Modifier</a>
-                <a href="{% url 'vehicles:vehicle_delete' vehicule.pk %}" class="btn btn-danger">Supprimer</a>
+                <table class="table glass-table mb-4">
+                    <tbody>
+                        <tr><td>Annee</td><td>{{ vehicule.annee }}</td></tr>
+                        <tr><td>Immatriculation</td><td>{{ vehicule.immatriculation }}</td></tr>
+                        <tr><td>Carburant</td><td>{{ vehicule.get_carburant_display }}</td></tr>
+                        <tr><td>Transmission</td><td>{{ vehicule.get_transmission_display }}</td></tr>
+                        <tr><td>Places</td><td>{{ vehicule.places }}</td></tr>
+                        <tr><td>Couleur</td><td>{{ vehicule.couleur }}</td></tr>
+                        <tr><td>Categorie</td><td>{{ vehicule.categorie|default:"N/A" }}</td></tr>
+                        <tr><td>Kilometrage</td><td>{{ vehicule.kilometrage }} km</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="price-card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <h3 class="mb-0" style="color: #ff6b6b;">{{ vehicule.prix_journalier }} MAD</h3>
+                            <small class="text-muted">par jour</small>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-muted">Caution</small>
+                            <h4 class="mb-0" style="color: white;">{{ vehicule.caution }} MAD</h4>
+                        </div>
+                    </div>
+                </div>
+
+                {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
+                    <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-glass w-100 mb-3">
+                        <i class="fas fa-calendar-check me-2"></i>Reserver ce vehicule
+                    </a>
+                {% elif not user.is_authenticated %}
+                    <a href="{% url 'accounts:login' %}" class="btn btn-glass w-100 mb-3">
+                        <i class="fas fa-sign-in-alt me-2"></i>Connectez-vous pour reserver
+                    </a>
+                {% else %}
+                    <button class="btn btn-outline-glass w-100 mb-3" disabled>
+                        <i class="fas fa-ban me-2"></i>Non disponible
+                    </button>
+                {% endif %}
+
+                {% if user.is_authenticated and user.is_admin %}
+                <div class="d-flex gap-2 mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                    <a href="{% url 'vehicles:vehicle_update' vehicule.pk %}" class="btn btn-glass-teal flex-grow-1">
+                        <i class="fas fa-edit me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'vehicles:vehicle_delete' vehicule.pk %}" class="btn btn-glass flex-grow-1">
+                        <i class="fas fa-trash me-2"></i>Supprimer
+                    </a>
+                </div>
+                {% endif %}
+
+                {% if vehicule.description %}
+                <p class="mt-4 mb-0" style="color: rgba(255,255,255,0.7);">{{ vehicule.description }}</p>
+                {% endif %}
             </div>
-            {% endif %}
         </div>
     </div>
 
     {% if vehicule.avis.all %}
     <div class="mt-5">
-        <h3>Avis et Notes</h3>
-        <div class="row">
+        <h3 class="mb-4">
+            <i class="fas fa-star me-2" style="color: #ff6b6b;"></i>Avis et Notes
+        </h3>
+        <div class="row g-4">
             {% for avis in vehicule.avis.all %}
-            <div class="col-md-4 mb-3">
-                <div class="card">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between">
-                            <strong>{{ avis.client.get_full_name }}</strong>
-                            <span class="text-warning">{% for i in "12345" %}{% if forloop.counter <= avis.note %}★{% else %}☆{% endif %}{% endfor %}</span>
+            <div class="col-md-4">
+                <div class="card review-card p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <strong style="color: white;">{{ avis.client.get_full_name }}</strong>
+                            <br>
+                            <small class="text-muted">{{ avis.client.email }}</small>
                         </div>
-                        <p class="mt-2">{{ avis.commentaire }}</p>
-                        <small class="text-muted">{{ avis.date|date:"d/m/Y" }}</small>
+                        <div class="rating">
+                            {% for i in "12345" %}
+                                {% if forloop.counter <= avis.note %}
+                                    <i class="fas fa-star star-filled"></i>
+                                {% else %}
+                                    <i class="fas fa-star star-empty"></i>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
                     </div>
+                    <p class="mb-3" style="color: rgba(255,255,255,0.8);">{{ avis.commentaire }}</p>
+                    <small class="text-muted">
+                        <i class="fas fa-calendar me-1"></i>{{ avis.date|date:"d/m/Y" }}
+                    </small>
                 </div>
             </div>
             {% endfor %}

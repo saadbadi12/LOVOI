@@ -1,29 +1,197 @@
 {% extends 'base.html' %}
-{% block title %}Catégorie - LOVOI{% endblock %}
+{% block title %}Categorie - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .form-label {
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .form-control-glass, .form-textarea-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 12px;
+        padding: 14px 18px;
+        transition: all 0.3s ease;
+    }
+    .form-control-glass:focus, .form-textarea-glass:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: #4ecdc4;
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        color: white;
+        outline: none;
+    }
+    .form-control-glass::placeholder {
+        color: rgba(255,255,255,0.4);
+    }
+    .form-textarea-glass {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .btn-glass {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass:hover {
+        background: #ff6b6b;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255,107,107,0.3);
+    }
+    .btn-glass-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass-teal:hover {
+        background: #4ecdc4;
+        color: #1a1a2e;
+    }
+    .help-text {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.85rem;
+        margin-top: 6px;
+    }
+    .required-field {
+        color: #ff6b6b;
+    }
+    .icon-preview {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(255,107,107,0.2), rgba(78,205,196,0.2));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-top: 16px;
+    }
+    .icon-preview i {
+        font-size: 1.5rem;
+        color: #4ecdc4;
+    }
+    .icon-suggestions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+    }
+    .icon-suggestion {
+        padding: 8px 12px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.6);
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .icon-suggestion:hover {
+        background: rgba(78,205,196,0.2);
+        border-color: #4ecdc4;
+        color: #4ecdc4;
+    }
+    h1, h2, h3 {
+        color: white;
+    }
+    .text-muted {
+        color: rgba(255,255,255,0.5) !important;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Ajouter Catégorie</h1>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 col-md-8">
+            <div class="text-center mb-5">
+                <h1 class="mb-2">{% if form.instance.pk %}Modifier{% else %}Ajouter{% endif %} Categorie</h1>
+                <p class="text-muted">Definissez une nouvelle categorie de vehicules</p>
+            </div>
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label>Type</label>
-                    <input type="text" name="type" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label>Description</label>
-                    <textarea name="description" class="form-control" rows="3"></textarea>
-                </div>
-                <div class="mb-3">
-                    <label>Icône (optionnel)</label>
-                    <input type="text" name="icon" class="form-control" placeholder="e.g., car, truck">
-                </div>
-                <button type="submit" class="btn btn-success">Enregistrer</button>
-            </form>
+            <div class="glass-card p-4 p-md-5">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label">Type <span class="required-field">*</span></label>
+                        <input type="text" name="type" class="form-control form-control-glass" placeholder="Ex: SUV, Compacte, Berline" required>
+                        {% if form.type.help_text %}
+                        <div class="help-text">{{ form.type.help_text }}</div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-textarea-glass" rows="4" placeholder="Decrivez cette categorie..."></textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">Icone (optionnel)</label>
+                        <input type="text" name="icon" class="form-control form-control-glass" id="iconInput" placeholder="car, truck, bus...">
+                        <div class="help-text">Entrez le nom d'une icone FontAwesome (ex: car, truck, van)</div>
+
+                        <div class="icon-suggestions">
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='car'">car</span>
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='truck'">truck</span>
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='bus'">bus</span>
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='van-shuttle'">van</span>
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='car-side'">coupe</span>
+                            <span class="icon-suggestion" onclick="document.getElementById('iconInput').value='sedan-car'">sedan</span>
+                        </div>
+
+                        <div class="d-flex justify-content-center">
+                            <div class="icon-preview" id="iconPreview" style="display: none;">
+                                <i class="fas fa-car" id="previewIcon"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <a href="{% url 'vehicles:categorie_list' %}" class="btn btn-glass-teal">
+                            <i class="fas fa-arrow-left me-2"></i>Retour
+                        </a>
+                        <button type="submit" class="btn btn-glass">
+                            <i class="fas fa-save me-2"></i>Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>
+
+<script>
+document.getElementById('iconInput').addEventListener('input', function(e) {
+    var preview = document.getElementById('iconPreview');
+    var icon = document.getElementById('previewIcon');
+    if (e.target.value) {
+        preview.style.display = 'flex';
+        icon.className = 'fas fa-' + e.target.value;
+    } else {
+        preview.style.display = 'none';
+    }
+});
+</script>
 {% endblock %}

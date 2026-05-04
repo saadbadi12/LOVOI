@@ -1,10 +1,157 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Dashboard Technicien - LOVOI{% endblock %}
 
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.stat-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+    padding: 30px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.stat-card:hover { transform: translateY(-5px); border-color: rgba(255,107,107,0.4); }
+
+.action-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 15px 30px;
+    border-radius: 50px;
+    color: white;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+}
+
+.action-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-2px); }
+
+.welcome-badge {
+    background: rgba(255,107,107,0.2);
+    color: #ff6b6b;
+    padding: 8px 20px;
+    border-radius: 50px;
+    font-weight: 600;
+}
+
+.big-icon {
+    font-size: 3rem;
+    margin-bottom: 15px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h1>Mon Espace - Technicien</h1>
-    <p class="lead">Bienvenue, {{ user.get_full_name }}</p>
-    <a href="{% url 'vehicles:maintenance_list' %}" class="btn btn-primary">Mes Maintenances</a>
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="text-white fw-bold mb-1">Mon Espace - Technicien</h1>
+            <p class="text-white-50 mb-0">Bienvenue, {{ user.get_full_name }}</p>
+        </div>
+        <div>
+            <span class="welcome-badge">
+                <i class="fas fa-wrench me-2"></i>{{ user.get_role_display }}
+            </span>
+        </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="row g-4 mb-5">
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="big-icon">🔧</div>
+                <div class="text-white fw-bold" style="font-size: 2rem;">{{ total_maintenances|default:0 }}</div>
+                <p class="text-white-50 mb-0">Total Maintenances</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="big-icon">⚙️</div>
+                <div class="text-white fw-bold" style="font-size: 2rem;">{{ en_cours|default:0 }}</div>
+                <p class="text-white-50 mb-0">En Cours</p>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="big-icon">✅</div>
+                <div class="text-white fw-bold" style="font-size: 2rem;">{{ terminees|default:0 }}</div>
+                <p class="text-white-50 mb-0">Terminées</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="glass-card p-4 mb-5">
+        <h5 class="text-info mb-4">
+            <i class="fas fa-bolt me-2"></i>Actions Rapides
+        </h5>
+
+        <div class="d-flex flex-wrap gap-3">
+            <a href="{% url 'vehicles:maintenance_list' %}" class="action-btn">
+                <i class="fas fa-list"></i> Mes Maintenances
+            </a>
+            <a href="{% url 'vehicles:maintenance_create' %}" class="action-btn">
+                <i class="fas fa-plus"></i> Nouvelle Maintenance
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Work -->
+    {% if recent_maintenances %}
+    <div class="glass-card p-4">
+        <h5 class="text-warning mb-4">
+            <i class="fas fa-history me-2"></i>Dernières Maintenances
+        </h5>
+
+        <div class="table-responsive">
+            <table class="table table-dark">
+                <thead>
+                    <tr>
+                        <th>Véhicule</th>
+                        <th>Type</th>
+                        <th>Date prévue</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in recent_maintenances %}
+                    <tr>
+                        <td>{{ m.vehicule }}</td>
+                        <td>{{ m.get_type_display }}</td>
+                        <td class="text-white-50">{{ m.date_prevue|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge" style="background: rgba(78,205,196,0.2); color: #4ecdc4;">
+                                {{ m.get_statut_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}

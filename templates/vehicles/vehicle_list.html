@@ -1,96 +1,324 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Notre Parc Auto</h1>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-header {
+        background: rgba(255,255,255,0.08);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(78,205,196,0.15);
+    }
+    .glass-table thead th {
+        color: #4ecdc4;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+    }
+    .glass-table tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+        transition: all 0.3s ease;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.05);
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.9);
+        border: none;
+        padding: 16px;
+        vertical-align: middle;
+    }
+    .vehicle-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .vehicle-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+    .vehicle-card .card-img-top {
+        border-radius: 20px 20px 0 0;
+        object-fit: cover;
+    }
+    .badge-coral {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.3);
+    }
+    .badge-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.3);
+    }
+    .badge-dark {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+        border: 1px solid rgba(255,255,255,0.15);
+    }
+    .btn-glass {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.4);
+        transition: all 0.3s ease;
+    }
+    .btn-glass:hover {
+        background: #ff6b6b;
+        color: #1a1a2e;
+    }
+    .btn-glass-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.4);
+        transition: all 0.3s ease;
+    }
+    .btn-glass-teal:hover {
+        background: #4ecdc4;
+        color: #1a1a2e;
+    }
+    .form-control-glass, .form-select-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 12px;
+        padding: 12px 16px;
+    }
+    .form-control-glass:focus, .form-select-glass:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: #4ecdc4;
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        color: white;
+        outline: none;
+    }
+    .form-control-glass::placeholder {
+        color: rgba(255,255,255,0.4);
+    }
+    .form-select-glass option {
+        background: #1a1a2e;
+        color: white;
+    }
+    .page-link {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+        border-radius: 10px;
+        margin: 0 4px;
+        transition: all 0.3s ease;
+    }
+    .page-link:hover {
+        background: rgba(78,205,196,0.2);
+        border-color: #4ecdc4;
+        color: #4ecdc4;
+    }
+    .page-item.active .page-link {
+        background: #ff6b6b;
+        border-color: #ff6b6b;
+        color: #1a1a2e;
+        font-weight: 600;
+    }
+    .no-image-placeholder {
+        height: 200px;
+        background: linear-gradient(135deg, rgba(255,107,107,0.1), rgba(78,205,196,0.1));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.4);
+        font-size: 14px;
+    }
+    .price-tag {
+        color: #ff6b6b;
+        font-size: 1.4rem;
+        font-weight: 700;
+    }
+    .status-badge {
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        border-radius: 30px;
+    }
+    .status-disponible {
+        background: rgba(40,167,69,0.2);
+        color: #28a745;
+        border: 1px solid rgba(40,167,69,0.3);
+    }
+    .status-indisponible {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.3);
+    }
+    h1, h2, h3, h4, h5 {
+        color: white;
+    }
+    .text-muted {
+        color: rgba(255,255,255,0.5) !important;
+    }
+</style>
+{% endblock %}
 
-    <form method="get" class="row g-3 mt-3 p-3 bg-light rounded">
-        <div class="col-md-3">
-            <input type="text" name="search" class="form-control" placeholder="Rechercher..." value="{{ filters.search }}">
+{% block content %}
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="mb-2" style="color: white;">Notre Parc Auto</h1>
+            <p class="text-muted mb-0">Decouvrez notre collection de vehicules premium</p>
         </div>
-        <div class="col-md-2">
-            <select name="categorie" class="form-select">
-                <option value="">Catégorie</option>
-                {% for cat in categories %}
-                <option value="{{ cat.id }}" {% if filters.categorie == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.type }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select name="carburant" class="form-select">
-                <option value="">Carburant</option>
-                <option value="ESSENCE" {% if filters.carburant == 'ESSENCE' %}selected{% endif %}>Essence</option>
-                <option value="DIESEL" {% if filters.carburant == 'DIESEL' %}selected{% endif %}>Diesel</option>
-                <option value="ELECTRIQUE" {% if filters.carburant == 'ELECTRIQUE' %}selected{% endif %}>Électrique</option>
-                <option value="HYBRIDE" {% if filters.carburant == 'HYBRIDE' %}selected{% endif %}>Hybride</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <select name="transmission" class="form-select">
-                <option value="">Transmission</option>
-                <option value="MANUELLE" {% if filters.transmission == 'MANUELLE' %}selected{% endif %}>Manuelle</option>
-                <option value="AUTOMATIQUE" {% if filters.transmission == 'AUTOMATIQUE' %}selected{% endif %}>Automatique</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <input type="number" name="prix_max" class="form-control" placeholder="Prix max (MAD)" value="{{ filters.prix_max }}">
-        </div>
-        <div class="col-md-1">
-            <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+        <span class="badge badge-teal px-3 py-2">
+            <i class="fas fa-car me-2"></i>{{ page_obj.paginator.count }} vehicules
+        </span>
+    </div>
+
+    <form method="get" class="glass-card p-4 mb-5">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <input type="text" name="search" class="form-control form-control-glass" placeholder="Rechercher un vehicule..." value="{{ filters.search }}">
+            </div>
+            <div class="col-md-2">
+                <select name="categorie" class="form-select form-select-glass">
+                    <option value="">Categorie</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}" {% if filters.categorie == cat.id|stringformat:"s" %}selected{% endif %}>{{ cat.type }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="carburant" class="form-select form-select-glass">
+                    <option value="">Carburant</option>
+                    <option value="ESSENCE" {% if filters.carburant == 'ESSENCE' %}selected{% endif %}>Essence</option>
+                    <option value="DIESEL" {% if filters.carburant == 'DIESEL' %}selected{% endif %}>Diesel</option>
+                    <option value="ELECTRIQUE" {% if filters.carburant == 'ELECTRIQUE' %}selected{% endif %}>Electrique</option>
+                    <option value="HYBRIDE" {% if filters.carburant == 'HYBRIDE' %}selected{% endif %}>Hybride</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="transmission" class="form-select form-select-glass">
+                    <option value="">Transmission</option>
+                    <option value="MANUELLE" {% if filters.transmission == 'MANUELLE' %}selected{% endif %}>Manuelle</option>
+                    <option value="AUTOMATIQUE" {% if filters.transmission == 'AUTOMATIQUE' %}selected{% endif %}>Automatique</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="number" name="prix_max" class="form-control form-control-glass" placeholder="Prix max (MAD)" value="{{ filters.prix_max }}">
+            </div>
+            <div class="col-md-1">
+                <button type="submit" class="btn btn-glass w-100 h-100">
+                    <i class="fas fa-filter"></i>
+                </button>
+            </div>
         </div>
     </form>
 
-    <div class="row mt-4">
+    <div class="row g-4">
         {% for vehicule in page_obj %}
-        <div class="col-md-4 mb-4">
-            <div class="card h-100">
+        <div class="col-lg-4 col-md-6">
+            <div class="card glass-card vehicle-card h-100 overflow-hidden">
                 {% if vehicule.photo %}
-                    <img src="{{ vehicule.photo.url }}" class="card-img-top" style="height: 200px; object-fit: cover;" alt="{{ vehicule }}">
+                    <img src="{{ vehicule.photo.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ vehicule }}">
                 {% else %}
-                    <div class="bg-secondary text-white d-flex align-items-center justify-content-center" style="height: 200px;">Pas d'image</div>
+                    <div class="no-image-placeholder">
+                        <i class="fas fa-car fa-3x"></i>
+                    </div>
                 {% endif %}
-                <div class="card-body">
-                    <h5 class="card-title">{{ vehicule.marque }} {{ vehicule.modele }}</h5>
-                    <p class="card-text">
-                        <span class="badge bg-secondary">{{ vehicule.categorie|default:"N/A" }}</span>
-                        <span class="badge bg-info">{{ vehicule.get_carburant_display }}</span>
-                        <span class="badge bg-dark">{{ vehicule.get_transmission_display }}</span>
-                    </p>
-                    <p class="small text-muted">{{ vehicule.annee }} | {{ vehicule.places }} places | {{ vehicule.couleur }}</p>
-                    <p class="text-primary fw-bold fs-5">{{ vehicule.prix_journalier }} MAD / jour</p>
-                    {% if vehicule.statut == 'DISPONIBLE' %}
-                        <span class="badge bg-success mb-2">Disponible</span>
-                    {% else %}
-                        <span class="badge bg-danger mb-2">{{ vehicule.get_statut_display }}</span>
-                    {% endif %}
-                </div>
-                <div class="card-footer">
-                    <a href="{% url 'vehicles:vehicle_detail' vehicule.pk %}" class="btn btn-outline-primary btn-sm">Détails</a>
-                    {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
-                        <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-success btn-sm">Réserver</a>
-                    {% endif %}
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="mb-1" style="color: white;">{{ vehicule.marque }} {{ vehicule.modele }}</h5>
+                            <small class="text-muted">{{ vehicule.immatriculation }}</small>
+                        </div>
+                        {% if vehicule.statut == 'DISPONIBLE' %}
+                            <span class="badge status-disponible">
+                                <i class="fas fa-circle me-1" style="font-size: 6px;"></i>Disponible
+                            </span>
+                        {% else %}
+                            <span class="badge status-indisponible">
+                                {{ vehicule.get_statut_display }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        <span class="badge badge-teal">{{ vehicule.categorie|default:"N/A" }}</span>
+                        <span class="badge badge-coral">{{ vehicule.get_carburant_display }}</span>
+                        <span class="badge badge-dark">{{ vehicule.get_transmission_display }}</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-3" style="color: rgba(255,255,255,0.7);">
+                        <span><i class="fas fa-calendar me-1"></i> {{ vehicule.annee }}</span>
+                        <span><i class="fas fa-users me-1"></i> {{ vehicule.places }} places</span>
+                        <span><i class="fas fa-palette me-1"></i> {{ vehicule.couleur }}</span>
+                    </div>
+
+                    <div class="price-tag mb-3">
+                        {{ vehicule.prix_journalier }} MAD <span style="font-size: 0.9rem; font-weight: 400; color: rgba(255,255,255,0.5);">/ jour</span>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <a href="{% url 'vehicles:vehicle_detail' vehicule.pk %}" class="btn btn-glass-teal">
+                            <i class="fas fa-eye me-2"></i>Voir Details
+                        </a>
+                        {% if user.is_authenticated and user.is_client and vehicule.statut == 'DISPONIBLE' %}
+                            <a href="{% url 'reservations:reservation_create' vehicule.pk %}" class="btn btn-glass">
+                                <i class="fas fa-calendar-check me-2"></i>Reserver
+                            </a>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
         {% empty %}
         <div class="col-12">
-            <p class="text-center text-muted">Aucun véhicule trouvé.</p>
+            <div class="glass-card p-5 text-center">
+                <i class="fas fa-car fa-4x mb-4" style="color: rgba(255,255,255,0.2);"></i>
+                <h4 class="text-muted">Aucun vehicule trouve</h4>
+                <p class="text-muted">Essayez de modifier vos filtres de recherche</p>
+            </div>
         </div>
         {% endfor %}
     </div>
 
     {% if page_obj.has_other_pages %}
-    <nav>
+    <nav class="mt-5">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page=1">Première</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>
+            <li class="page-item">
+                <a class="page-link" href="?page=1">
+                    <i class="fas fa-angle-double-left"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="fas fa-angle-left"></i>
+                </a>
+            </li>
             {% endif %}
-            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            </li>
             {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivante</a></li>
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Dernière</a></li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                    <i class="fas fa-angle-right"></i>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                    <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
             {% endif %}
         </ul>
     </nav>

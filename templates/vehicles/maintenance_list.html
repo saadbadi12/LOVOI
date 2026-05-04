@@ -1,36 +1,147 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Maintenances - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Maintenances</h1>
-    <a href="{% url 'vehicles:maintenance_create' %}" class="btn btn-primary mt-3">+ Nouvelle Maintenance</a>
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>Véhicule</th>
-                <th>Type</th>
-                <th>Date prévue</th>
-                <th>Statut</th>
-                <th>Coût</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in maintenances %}
-            <tr>
-                <td>{{ m.vehicule }}</td>
-                <td>{{ m.get_type_display }}</td>
-                <td>{{ m.date_prevue }}</td>
-                <td>{{ m.get_statut_display }}</td>
-                <td>{{ m.cout|default:"-" }} MAD</td>
-                <td><a href="{% url 'vehicles:maintenance_update' m.pk %}" class="btn btn-sm btn-outline-primary">Modifier</a></td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="6" class="text-center">Aucune maintenance.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.action-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 10px 24px;
+    border-radius: 50px;
+    color: white;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.action-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-2px); }
+
+.glass-table {
+    background: rgba(255,255,255,0.03);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.glass-table thead {
+    background: rgba(255,255,255,0.08);
+}
+
+.glass-table thead th {
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    border: none;
+    padding: 15px;
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.glass-table tbody tr:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.glass-table tbody td {
+    color: white;
+    border: none;
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.status-badge {
+    padding: 6px 14px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.status-requise { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+.status-en { background: rgba(255,193,7,0.2); color: #ffc107; }
+.status-terminee { background: rgba(25,135,84,0.2); color: #198754; }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="text-white fw-bold mb-1">Maintenances</h1>
+            <p class="text-white-50 mb-0">Gestion des maintient et réparations</p>
+        </div>
+        <a href="{% url 'vehicles:maintenance_create' %}" class="action-btn">
+            <i class="fas fa-plus"></i> Nouvelle Maintenance
+        </a>
+    </div>
+
+    <!-- Maintenances Table -->
+    <div class="glass-card p-4">
+        <div class="table-responsive">
+            <table class="table table-dark glass-table mb-0">
+                <thead>
+                    <tr>
+                        <th>Véhicule</th>
+                        <th>Type</th>
+                        <th>Date prévue</th>
+                        <th>Statut</th>
+                        <th>Coût</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for m in maintenances %}
+                    <tr>
+                        <td class="fw-bold">{{ m.vehicule }}</td>
+                        <td>{{ m.get_type_display }}</td>
+                        <td class="text-white-50">{{ m.date_prevue|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="status-badge status-{% if m.statut == 'MAINTENANCE_REQUISE' %}requise{% elif m.statut == 'EN_MAINTENANCE' %}en{% else %}terminee{% endif %}">
+                                {{ m.get_statut_display }}
+                            </span>
+                        </td>
+                        <td>{{ m.cout|default:"-" }} <span class="text-white-50">MAD</span></td>
+                        <td>
+                            <a href="{% url 'vehicles:maintenance_update' m.pk %}" class="btn btn-sm btn-outline-light rounded-pill">
+                                <i class="fas fa-edit me-1"></i>Modifier
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div style="font-size: 3rem; margin-bottom: 1rem;">🔧</div>
+                            <p class="text-white-50 mb-0">Aucune maintenance.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% endblock %}

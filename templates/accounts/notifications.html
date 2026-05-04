@@ -1,21 +1,120 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Notifications - LOVOI{% endblock %}
 
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.notification-item {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 15px;
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+.notification-item:hover {
+    background: rgba(255,255,255,0.06);
+    transform: translateX(5px);
+}
+
+.notification-item.unread {
+    background: rgba(255,107,107,0.08);
+    border-color: rgba(255,107,107,0.2);
+}
+
+.notification-icon {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+}
+
+.icon-reservation { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+.icon-paiement { background: rgba(25,135,84,0.2); color: #198754; }
+.icon-maintenance { background: rgba(255,193,7,0.2); color: #ffc107; }
+.icon-default { background: rgba(108,117,125,0.2); color: #6c757d; }
+
+.type-badge {
+    padding: 5px 12px;
+    border-radius: 50px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.badge-reservation { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+.badge-paiement { background: rgba(25,135,84,0.2); color: #198754; }
+.badge-maintenance { background: rgba(255,193,7,0.2); color: #ffc107; }
+.badge-default { background: rgba(108,117,125,0.2); color: #6c757d; }
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h1>Mes Notifications</h1>
-    <div class="list-group mt-4">
+<div class="container py-5">
+    <!-- Header -->
+    <div class="mb-5">
+        <h1 class="text-white fw-bold mb-1">Mes Notifications</h1>
+        <p class="text-white-50 mb-0">Restez informé de toutes vos activités</p>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="glass-card p-4">
         {% for notif in notifications %}
-        <div class="list-group-item {% if not notif.lue %}fw-bold{% endif %}">
-            <div class="d-flex justify-content-between">
-                <h5>{{ notif.titre }}</h5>
-                <small>{{ notif.date_envoi }}</small>
+        <div class="notification-item {% if not notif.lue %}unread{% endif %}">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="notification-icon icon-{{ notif.type|lower }}">
+                        {% if notif.type == 'RESERVATION' %}
+                        <i class="fas fa-calendar-check"></i>
+                        {% elif notif.type == 'PAIEMENT' %}
+                        <i class="fas fa-credit-card"></i>
+                        {% elif notif.type == 'MAINTENANCE' %}
+                        <i class="fas fa-wrench"></i>
+                        {% else %}
+                        <i class="fas fa-bell"></i>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <h5 class="text-white mb-0 fw-bold">{{ notif.titre }}</h5>
+                    </div>
+                </div>
+                <small class="text-white-50">{{ notif.date_envoi }}</small>
             </div>
-            <p>{{ notif.message }}</p>
-            <span class="badge bg-{% if notif.type == 'RESERVATION' %}primary{% elif notif.type == 'PAIEMENT' %}success{% elif notif.type == 'MAINTENANCE' %}warning{% else %}secondary{% endif %}">{{ notif.get_type_display }}</span>
+            <div class="ms-5">
+                <p class="text-white-50 mb-2">{{ notif.message }}</p>
+                <span class="type-badge badge-{{ notif.type|lower }}">{{ notif.get_type_display }}</span>
+            </div>
         </div>
         {% empty %}
-        <p>Aucune notification.</p>
+        <div class="empty-state">
+            <div style="font-size: 4rem; margin-bottom: 1rem;">🔔</div>
+            <h4 class="text-white-50">Aucune notification</h4>
+            <p class="text-white-50">Vous êtes à jour !</p>
+        </div>
         {% endfor %}
     </div>
 </div>

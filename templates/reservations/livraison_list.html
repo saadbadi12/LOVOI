@@ -3,59 +3,154 @@
 
 {% block extra_css %}
 <style>
-.livraison-map-container {
-    height: 400px;
-    border-radius: 12px;
-    margin-bottom: 20px;
-}
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border: none;
+        color: #fff;
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #ee5a5a, #ff6b6b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        color: #fff;
+    }
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-success { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
+    .badge-secondary { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .map-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .map-card-header {
+        background: rgba(255,255,255,0.08);
+        padding: 16px 20px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .map-card-header h5 {
+        margin: 0;
+        color: #fff;
+        font-weight: 600;
+    }
+    .livraison-map-container {
+        height: 400px;
+    }
+    .text-white-50 { color: rgba(255,255,255,0.5) !important; }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>Livraisons</h1>
-    <a href="{% url 'reservations:livraison_create' %}" class="btn btn-primary mt-3">+ Planifier Livraison</a>
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Livraisons</h1>
+    <a href="{% url 'reservations:livraison_create' %}" class="btn btn-glass-primary mb-4">+ Planifier Livraison</a>
 
-    <!-- Map showing all delivery locations -->
-    <div class="card mt-4">
-        <div class="card-header">
-            <i class="fas fa-map-marked-alt me-2"></i>Carte des Livraisons
+    <div class="map-card mb-4">
+        <div class="map-card-header">
+            <h5><i class="fas fa-map-marked-alt me-2"></i>Carte des Livraisons</h5>
         </div>
         <div class="card-body p-0">
             <div id="livraison-map" class="livraison-map-container"></div>
         </div>
     </div>
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Réservation</th>
-                <th>Livreur</th>
-                <th>Type</th>
-                <th>Date</th>
-                <th>Statut</th>
-                <th>Lieu</th>
-                <th>Coordonnées</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for l in livraisons %}
-            <tr>
-                <td>{{ l.id }}</td>
-                <td>#{{ l.reservation.id }}</td>
-                <td>{{ l.livreur|default:"-" }}</td>
-                <td>{{ l.get_type_display }}</td>
-                <td>{{ l.date_livraison }} {{ l.heure_livraison }}</td>
-                <td><span class="badge bg-{% if l.statut == 'LIVREE' %}success{% elif l.statut == 'EN_COURS' %}warning{% else %}secondary{% endif %}">{{ l.get_statut_display }}</span></td>
-                <td>{{ l.lieu_livraison|truncatechars:20 }}</td>
-                <td>{% if l.latitude and l.longitude %}<small class="text-muted">{{ l.latitude|floatformat:4 }}, {{ l.longitude|floatformat:4 }}</small>{% else %}-{% endif %}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="8" class="text-center">Aucune livraison.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Réservation</th>
+                    <th>Livreur</th>
+                    <th>Type</th>
+                    <th>Date</th>
+                    <th>Statut</th>
+                    <th>Lieu</th>
+                    <th>Coordonnées</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for l in livraisons %}
+                <tr>
+                    <td class="fw-bold">#{{ l.id }}</td>
+                    <td>#{{ l.reservation.id }}</td>
+                    <td>{{ l.livreur|default:"-" }}</td>
+                    <td>{{ l.get_type_display }}</td>
+                    <td>{{ l.date_livraison }} {{ l.heure_livraison }}</td>
+                    <td>
+                        <span class="badge-status {% if l.statut == 'LIVREE' %}badge-success{% elif l.statut == 'EN_COURS' %}badge-warning{% else %}badge-secondary{% endif %}">
+                            {{ l.get_statut_display }}
+                        </span>
+                    </td>
+                    <td>{{ l.lieu_livraison|truncatechars:20 }}</td>
+                    <td class="text-white-50">{% if l.latitude and l.longitude %}<small>{{ l.latitude|floatformat:4 }}, {{ l.longitude|floatformat:4 }}</small>{% else %}-{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-white-50 py-4">Aucune livraison.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>

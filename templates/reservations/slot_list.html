@@ -1,32 +1,117 @@
 {% extends 'base.html' %}
 {% block title %}Slots - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Gestion des Slots</h1>
-    <a href="{% url 'reservations:slot_create' %}" class="btn btn-primary mt-3">+ Ajouter Slot</a>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border: none;
+        color: #fff;
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #ee5a5a, #ff6b6b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        color: #fff;
+    }
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-success { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .badge-danger { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Localisation</th>
-                <th>Type</th>
-                <th>Disponible</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for slot in slots %}
-            <tr>
-                <td>{{ slot.id }}</td>
-                <td>{{ slot.localisation }}</td>
-                <td>{{ slot.get_type_display }}</td>
-                <td>{% if slot.disponible %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-danger">Non</span>{% endif %}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="4" class="text-center">Aucun slot.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Gestion des Slots</h1>
+    <a href="{% url 'reservations:slot_create' %}" class="btn btn-glass-primary mb-4">+ Ajouter Slot</a>
+
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Localisation</th>
+                    <th>Type</th>
+                    <th>Disponible</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for slot in slots %}
+                <tr>
+                    <td class="fw-bold">#{{ slot.id }}</td>
+                    <td>{{ slot.localisation }}</td>
+                    <td>{{ slot.get_type_display }}</td>
+                    <td>
+                        {% if slot.disponible %}
+                        <span class="badge-status badge-success">Oui</span>
+                        {% else %}
+                        <span class="badge-status badge-danger">Non</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="4" class="text-center text-white-50 py-4">Aucun slot.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

@@ -1,18 +1,91 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Supprimer Véhicule - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Supprimer le Véhicule</h1>
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <p>Êtes-vous sûr de vouloir supprimer <strong>{{ vehicule }}</strong> ?</p>
-            <form method="post">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">Supprimer</button>
-                <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-secondary">Annuler</a>
-            </form>
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.action-btn {
+    padding: 12px 28px;
+    border-radius: 50px;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+}
+
+.action-btn-danger {
+    background: linear-gradient(135deg, #ff6b6b, #ff5252);
+    border: none;
+    color: white;
+}
+
+.action-btn-danger:hover {
+    background: linear-gradient(135deg, #ff5252, #e64a4a);
+    transform: translateY(-2px);
+    box-shadow: 0 5px 20px rgba(255,107,107,0.3);
+}
+
+.action-btn-cancel {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    color: white;
+}
+
+.action-btn-cancel:hover {
+    background: rgba(255,255,255,0.15);
+    border-color: rgba(255,255,255,0.3);
+    color: white;
+    transform: translateY(-2px);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <!-- Warning Icon -->
+            <div class="text-center mb-4">
+                <div style="width: 80px; height: 80px; border-radius: 50%; background: rgba(255,107,107,0.15); display: flex; align-items: center; justify-content: center; margin: 0 auto;">
+                    <i class="fas fa-exclamation-triangle" style="font-size: 2.5rem; color: #ff6b6b;"></i>
+                </div>
+            </div>
+
+            <!-- Delete Confirmation Card -->
+            <div class="glass-card p-4 p-md-5 text-center">
+                <h1 class="text-white fw-bold mb-3">Supprimer le Véhicule</h1>
+                <p class="text-white-50 mb-4">
+                    Êtes-vous sûr de vouloir supprimer <strong class="text-white">{{ vehicule }}</strong> ?<br>
+                    <span class="text-warning">Cette action est irréversible.</span>
+                </p>
+
+                <form method="post" class="d-flex gap-3 justify-content-center mt-5">
+                    {% csrf_token %}
+                    <button type="submit" class="action-btn action-btn-danger">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </button>
+                    <a href="{% url 'vehicles:vehicle_list' %}" class="action-btn action-btn-cancel">
+                        <i class="fas fa-arrow-left"></i> Annuler
+                    </a>
+                </form>
+            </div>
         </div>
     </div>
 </div>

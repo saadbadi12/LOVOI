@@ -1,27 +1,230 @@
 {% extends 'base.html' %}
-{% block title %}{{ action }} Véhicule - LOVOI{% endblock %}
+{% block title %}{{ action }} Vehicule - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .form-label {
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .form-control-glass, .form-select-glass, .form-textarea-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 12px;
+        padding: 14px 18px;
+        transition: all 0.3s ease;
+    }
+    .form-control-glass:focus, .form-select-glass:focus, .form-textarea-glass:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: #4ecdc4;
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        color: white;
+        outline: none;
+    }
+    .form-control-glass::placeholder {
+        color: rgba(255,255,255,0.4);
+    }
+    .form-select-glass option {
+        background: #1a1a2e;
+        color: white;
+    }
+    .form-textarea-glass {
+        min-height: 120px;
+        resize: vertical;
+    }
+    .btn-glass {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass:hover {
+        background: #ff6b6b;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255,107,107,0.3);
+    }
+    .btn-glass-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass-teal:hover {
+        background: #4ecdc4;
+        color: #1a1a2e;
+    }
+    .alert-glass {
+        background: rgba(255,107,107,0.15);
+        border: 1px solid rgba(255,107,107,0.3);
+        border-radius: 12px;
+        color: #ff6b6b;
+        padding: 16px 20px;
+    }
+    .input-group-text {
+        background: rgba(78,205,196,0.2);
+        border: 1px solid rgba(78,205,196,0.3);
+        color: #4ecdc4;
+        border-radius: 12px 0 0 12px;
+    }
+    .input-group .form-control-glass {
+        border-radius: 0 12px 12px 0;
+    }
+    .help-text {
+        color: rgba(255,255,255,0.4);
+        font-size: 0.85rem;
+        margin-top: 6px;
+    }
+    .required-field {
+        color: #ff6b6b;
+    }
+    h1, h2, h3 {
+        color: white;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1>{{ action }} Véhicule</h1>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="text-center mb-5">
+                <h1 class="mb-2">{{ action }} Vehicule</h1>
+                <p class="text-muted">Completez les informations du vehicule</p>
+            </div>
 
-    {% if form.errors %}
-    <div class="alert alert-danger">
-        {% for field, errors in form.errors.items %}
-            {% for error in errors %}
-                <p>{{ field }}: {{ error }}</p>
-            {% endfor %}
-        {% endfor %}
-    </div>
-    {% endif %}
+            {% if form.errors %}
+            <div class="alert-glass mb-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle me-3"></i>
+                    <div>
+                        {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                                <p class="mb-0">{{ field }}: {{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn btn-success">{{ action }}</button>
-            </form>
+            <div class="glass-card p-4 p-md-5">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.marque.label }} <span class="required-field">*</span></label>
+                            {{ form.marque }}
+                            {% if form.marque.help_text %}
+                            <div class="help-text">{{ form.marque.help_text }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.modele.label }} <span class="required-field">*</span></label>
+                            {{ form.modele }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.immatriculation.label }} <span class="required-field">*</span></label>
+                            {{ form.immatriculation }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.annee.label }} <span class="required-field">*</span></label>
+                            {{ form.annee }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.carburant.label }}</label>
+                            {{ form.carburant }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.transmission.label }}</label>
+                            {{ form.transmission }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.places.label }} <span class="required-field">*</span></label>
+                            {{ form.places }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.couleur.label }}</label>
+                            {{ form.couleur }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">{{ form.kilometrage.label }}</label>
+                            {{ form.kilometrage }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.categorie.label }}</label>
+                            {{ form.categorie }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.statut.label }}</label>
+                            {{ form.statut }}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.prix_journalier.label }} <span class="required-field">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">MAD</span>
+                                {{ form.prix_journalier }}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">{{ form.caution.label }}</label>
+                            <div class="input-group">
+                                <span class="input-group-text">MAD</span>
+                                {{ form.caution }}
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">{{ form.description.label }}</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">{{ form.photo.label }}</label>
+                            <div class="glass-card p-4 text-center" style="border-style: dashed;">
+                                {{ form.photo }}
+                                <div class="help-text mt-2">
+                                    <i class="fas fa-cloud-upload-alt me-1"></i>Formats acceptes: JPG, PNG, WebP. Taille max: 5MB
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-glass-teal">
+                            <i class="fas fa-arrow-left me-2"></i>Retour
+                        </a>
+                        <button type="submit" class="btn btn-glass">
+                            <i class="fas fa-save me-2"></i>{{ action }}
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 </div>

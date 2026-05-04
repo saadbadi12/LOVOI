@@ -1,47 +1,183 @@
 {% extends 'base.html' %}
+{% load static %}
+
 {% block title %}Liste des Utilisateurs - LOVOI{% endblock %}
 
+{% block extra_css %}
+<style>
+:root {
+    --primary: #ff6b6b;
+    --secondary: #4ecdc4;
+    --dark: #1a1a2e;
+}
+
+body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh; }
+
+.glass-card {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 20px;
+}
+
+.action-btn {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.2);
+    padding: 8px 20px;
+    border-radius: 50px;
+    color: white;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.action-btn:hover { background: var(--primary); border-color: var(--primary); color: white; transform: translateY(-2px); }
+
+.glass-table {
+    background: rgba(255,255,255,0.03);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.glass-table thead {
+    background: rgba(255,255,255,0.08);
+}
+
+.glass-table thead th {
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    border: none;
+    padding: 15px;
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.glass-table tbody tr:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.glass-table tbody td {
+    color: white;
+    border: none;
+    padding: 15px;
+    vertical-align: middle;
+}
+
+.role-badge {
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.role-admin { background: rgba(255,107,107,0.2); color: #ff6b6b; }
+.role-employe { background: rgba(78,205,196,0.2); color: #4ecdc4; }
+.role-technicien { background: rgba(255,193,7,0.2); color: #ffc107; }
+.role-livreur { background: rgba(108,117,125,0.2); color: #6c757d; }
+.role-client { background: rgba(25,135,84,0.2); color: #198754; }
+
+.pagination .page-link {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+}
+
+.pagination .page-item.active .page-link {
+    background: var(--primary);
+    border-color: var(--primary);
+}
+
+.pagination .page-link:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: rgba(255,255,255,0.2);
+    color: white;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <div class="d-flex justify-content-between align-items-center">
-        <h1>Gestion des Utilisateurs</h1>
-        <a href="{% url 'accounts:user_create' %}" class="btn btn-primary">+ Ajouter</a>
+<div class="container py-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-5">
+        <div>
+            <h1 class="text-white fw-bold mb-1">Gestion des Utilisateurs</h1>
+            <p class="text-white-50 mb-0">Gérez les comptes et les rôles</p>
+        </div>
+        <a href="{% url 'accounts:user_create' %}" class="action-btn">
+            <i class="fas fa-plus"></i> Ajouter
+        </a>
     </div>
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Rôle</th>
-                <th>Inscrit le</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for user in page_obj %}
-            <tr>
-                <td>{{ user.id }}</td>
-                <td>{{ user.get_full_name|default:user.username }}</td>
-                <td>{{ user.email }}</td>
-                <td><span class="badge bg-{% if user.is_admin %}danger{% elif user.is_employe %}info{% elif user.is_technicien %}warning{% elif user.is_livreur %}secondary{% else %}success{% endif %}">{{ user.get_role_display }}</span></td>
-                <td>{{ user.date_inscription|date:"d/m/Y" }}</td>
-                <td><a href="#" class="btn btn-sm btn-outline-primary">Modifier</a></td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <!-- Users Table -->
+    <div class="glass-card p-4">
+        <div class="table-responsive">
+            <table class="table table-dark glass-table mb-0">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nom</th>
+                        <th>Email</th>
+                        <th>Rôle</th>
+                        <th>Inscrit le</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in page_obj %}
+                    <tr>
+                        <td class="fw-bold">#{{ user.id }}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width: 35px; height: 35px; border-radius: 50%; background: rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-user text-white-50"></i>
+                                </div>
+                                <span>{{ user.get_full_name|default:user.username }}</span>
+                            </div>
+                        </td>
+                        <td class="text-white-50">{{ user.email }}</td>
+                        <td>
+                            <span class="role-badge role-{% if user.is_admin %}admin{% elif user.is_employe %}employe{% elif user.is_technicien %}technicien{% elif user.is_livreur %}livreur{% else %}client{% endif %}">
+                                {{ user.get_role_display }}
+                            </span>
+                        </td>
+                        <td class="text-white-50">{{ user.date_inscription|date:"d/m/Y" }}</td>
+                        <td>
+                            <a href="#" class="btn btn-sm btn-outline-light rounded-pill">
+                                <i class="fas fa-edit me-1"></i>Modifier
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 
+    <!-- Pagination -->
     {% if page_obj.has_other_pages %}
-    <nav>
+    <nav class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                    <i class="fas fa-chevron-left me-1"></i>Précédente
+                </a>
+            </li>
             {% endif %}
-            <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+            <li class="page-item active">
+                <span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span>
+            </li>
             {% if page_obj.has_next %}
-            <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivante</a></li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                    Suivante<i class="fas fa-chevron-right ms-1"></i>
+                </a>
+            </li>
             {% endif %}
         </ul>
     </nav>

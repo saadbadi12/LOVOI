@@ -1,40 +1,139 @@
 {% extends 'base.html' %}
 {% block title %}Mes Réservations - LOVOI{% endblock %}
 
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .btn-glass-secondary {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        padding: 8px 18px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    .btn-glass-secondary:hover {
+        background: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.25);
+        color: #fff;
+    }
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-success { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
+    .badge-danger { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .badge-primary { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .pagination .page-link {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+    }
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border-color: #ff6b6b;
+    }
+    .pagination .page-link:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
+        color: #fff;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container mt-4">
-    <h1>Mes Réservations</h1>
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Véhicule</th>
-                <th>Date début</th>
-                <th>Date fin</th>
-                <th>Montant</th>
-                <th>Statut</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for res in page_obj %}
-            <tr>
-                <td>{{ res.id }}</td>
-                <td>{{ res.vehicule }}</td>
-                <td>{{ res.date_debut }}</td>
-                <td>{{ res.date_fin }}</td>
-                <td>{{ res.montant_total }} MAD</td>
-                <td><span class="badge bg-{% if res.statut_reservation == 'TERMINEE' %}success{% elif res.statut_reservation == 'EN_COURS' %}primary{% elif res.statut_reservation == 'ANNULEE' %}danger{% else %}warning{% endif %}">{{ res.get_statut_reservation_display }}</span></td>
-                <td><a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-outline-primary">Voir</a></td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="7" class="text-center">Aucune réservation.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Mes Réservations</h1>
+
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Véhicule</th>
+                    <th>Date début</th>
+                    <th>Date fin</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in page_obj %}
+                <tr>
+                    <td class="fw-bold">#{{ res.id }}</td>
+                    <td>{{ res.vehicule }}</td>
+                    <td>{{ res.date_debut }}</td>
+                    <td>{{ res.date_fin }}</td>
+                    <td class="text-warning fw-semibold">{{ res.montant_total }} MAD</td>
+                    <td>
+                        <span class="badge-status {% if res.statut_reservation == 'TERMINEE' %}badge-success{% elif res.statut_reservation == 'EN_COURS' %}badge-primary{% elif res.statut_reservation == 'ANNULEE' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ res.get_statut_reservation_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-glass-secondary">Voir</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-white-50 py-4">Aucune réservation.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 
     {% if page_obj.has_other_pages %}
-    <nav>
+    <nav class="mt-4">
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédente</a></li>

@@ -17,7 +17,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     background: rgba(255,255,255,0.05);
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 25px;
+    border-radius: 20px;
 }
 
 .stat-card {
@@ -72,6 +72,39 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     height: 60px;
     object-fit: cover;
     border-radius: 10px;
+}
+
+.glass-table {
+    background: rgba(255,255,255,0.03);
+    border-radius: 15px;
+    overflow: hidden;
+}
+
+.glass-table thead {
+    background: rgba(255,255,255,0.08);
+}
+
+.glass-table thead th {
+    color: rgba(255,255,255,0.7);
+    font-weight: 600;
+    border: none;
+    padding: 15px;
+}
+
+.glass-table tbody tr {
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    transition: all 0.3s ease;
+}
+
+.glass-table tbody tr:hover {
+    background: rgba(255,255,255,0.05);
+}
+
+.glass-table tbody td {
+    color: white;
+    border: none;
+    padding: 15px;
+    vertical-align: middle;
 }
 </style>
 {% endblock %}
@@ -129,7 +162,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 
         {% if reservations %}
         <div class="table-responsive">
-            <table class="table table-dark table-hover">
+            <table class="table table-dark table-hover glass-table">
                 <thead>
                     <tr>
                         <th>#</th>

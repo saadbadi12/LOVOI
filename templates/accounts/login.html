@@ -5,209 +5,229 @@
 
 {% block extra_css %}
 <style>
-:root {
-    --primary: #4ecdc4;
-    --primary-dark: #3dbdb5;
-    --secondary: #ff6b6b;
-    --dark: #1a1a2e;
-    --darker: #0f0f1a;
-    --glass: rgba(255,255,255,0.05);
-    --glass-border: rgba(255,255,255,0.1);
-}
+    :root {
+        --primary: #ff6b6b;
+        --primary-dark: #ee5a5a;
+        --secondary: #4ecdc4;
+        --secondary-dark: #3dbdb5;
+        --dark: #1a1a2e;
+        --darker: #0f0f1a;
+    }
 
-body {
-    font-family: 'Inter', sans-serif;
-    background: linear-gradient(135deg, var(--dark) 0%, var(--darker) 100%);
-    min-height: 100vh;
-}
+    body {
+        font-family: 'Inter', system-ui, sans-serif;
+        background: linear-gradient(135deg, var(--dark), var(--darker));
+        min-height: 100vh;
+    }
 
-.glass-card {
-    background: var(--glass);
-    backdrop-filter: blur(30px);
-    border: 1px solid var(--glass-border);
-    border-radius: 30px;
-}
+    .floating-shapes {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 0;
+    }
 
-.glass-input {
-    background: rgba(255,255,255,0.08);
-    border: 2px solid rgba(255,255,255,0.1);
-    border-radius: 15px;
-    padding: 18px 20px;
-    padding-left: 55px;
-    color: white;
-    font-size: 1rem;
-    transition: all 0.3s ease;
-}
+    .shape {
+        position: absolute;
+        border-radius: 50%;
+        animation: float 20s infinite;
+    }
 
-.glass-input:focus {
-    background: rgba(255,255,255,0.12);
-    border-color: var(--primary);
-    box-shadow: 0 0 0 4px rgba(78,205,196,0.2);
-    outline: none;
-    color: white;
-}
+    .shape-1 {
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(78,205,196,0.12) 0%, transparent 70%);
+        top: -150px;
+        left: -150px;
+    }
 
-.glass-input::placeholder {
-    color: rgba(255,255,255,0.45);
-}
+    .shape-2 {
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, rgba(255,107,107,0.1) 0%, transparent 70%);
+        bottom: -100px;
+        right: -100px;
+        animation-delay: -5s;
+    }
 
-.glass-label {
-    color: rgba(255,255,255,0.8);
-    font-weight: 600;
-    font-size: 0.9rem;
-    margin-bottom: 10px;
-    display: block;
-}
+    .shape-3 {
+        width: 250px;
+        height: 250px;
+        background: radial-gradient(circle, rgba(255,230,109,0.06) 0%, transparent 70%);
+        top: 50%;
+        right: 15%;
+        animation-delay: -10s;
+    }
 
-.btn-gradient {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border: none;
-    padding: 18px 40px;
-    border-radius: 50px;
-    font-weight: 700;
-    font-size: 1.15rem;
-    color: white;
-    box-shadow: 0 15px 40px rgba(78,205,196,0.35);
-    transition: all 0.4s ease;
-    width: 100%;
-}
+    @keyframes float {
+        0%, 100% { transform: translateY(0) rotate(0deg); }
+        50% { transform: translateY(-40px) rotate(5deg); }
+    }
 
-.btn-gradient:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 50px rgba(78,205,196,0.45);
-    color: white;
-}
+    .main-content {
+        position: relative;
+        z-index: 1;
+    }
 
-.input-icon {
-    position: relative;
-}
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.4);
+        padding: 3rem;
+    }
 
-.input-icon .icon {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255,255,255,0.5);
-    font-size: 1.1rem;
-    z-index: 10;
-}
+    .logo-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.2rem;
+        box-shadow: 0 15px 40px rgba(78,205,196,0.4);
+        margin: 0 auto;
+    }
 
-.input-icon .glass-input {
-    padding-left: 55px;
-}
+    .glass-input {
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 16px 20px;
+        padding-left: 55px;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
 
-.success-toast {
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    border-radius: 15px;
-    padding: 20px 25px;
-    color: white;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    animation: slideIn 0.5s ease;
-}
+    .glass-input:focus {
+        background: rgba(255,255,255,0.12);
+        border-color: var(--secondary);
+        box-shadow: 0 0 0 4px rgba(78,205,196,0.2);
+        outline: none;
+        color: white;
+    }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
+    .glass-input::placeholder {
+        color: rgba(255,255,255,0.45);
+    }
 
-.error-toast {
-    background: linear-gradient(135deg, var(--secondary), #c9184a);
-    border-radius: 15px;
-    padding: 20px 25px;
-    color: white;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    animation: slideIn 0.5s ease;
-}
+    .input-icon {
+        position: relative;
+    }
 
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
+    .input-icon .icon {
+        position: absolute;
+        left: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.5);
+        font-size: 1.1rem;
+        z-index: 10;
+        transition: color 0.3s ease;
+    }
 
-.floating-shapes {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none;
-    overflow: hidden;
-    z-index: 0;
-}
+    .input-icon:focus-within .icon {
+        color: var(--secondary);
+    }
 
-.shape {
-    position: absolute;
-    border-radius: 50%;
-    animation: float 20s infinite;
-}
+    .glass-label {
+        color: rgba(255,255,255,0.85);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+        display: block;
+    }
 
-.shape-1 {
-    width: 400px;
-    height: 400px;
-    background: radial-gradient(circle, rgba(78,205,196,0.15) 0%, transparent 70%);
-    top: -100px;
-    left: -100px;
-}
+    .btn-gradient {
+        background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+        border: none;
+        padding: 18px 45px;
+        border-radius: 50px;
+        font-weight: 700;
+        font-size: 1.1rem;
+        color: white;
+        box-shadow: 0 15px 40px rgba(78,205,196,0.35);
+        transition: all 0.4s ease;
+        width: 100%;
+    }
 
-.shape-2 {
-    width: 300px;
-    height: 300px;
-    background: radial-gradient(circle, rgba(255,107,107,0.12) 0%, transparent 70%);
-    bottom: -50px;
-    right: -50px;
-    animation-delay: -5s;
-}
+    .btn-gradient:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 50px rgba(78,205,196,0.45);
+        color: white;
+    }
 
-.shape-3 {
-    width: 250px;
-    height: 250px;
-    background: radial-gradient(circle, rgba(255,230,109,0.08) 0%, transparent 70%);
-    top: 40%;
-    right: 20%;
-    animation-delay: -10s;
-}
+    .btn-gradient:active {
+        transform: translateY(-2px);
+    }
 
-@keyframes float {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-30px) rotate(10deg); }
-}
+    .password-toggle {
+        position: absolute;
+        right: 20px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.5);
+        cursor: pointer;
+        z-index: 10;
+        transition: color 0.3s ease;
+        padding: 5px;
+    }
 
-.main-content {
-    position: relative;
-    z-index: 1;
-}
+    .password-toggle:hover {
+        color: var(--secondary);
+    }
 
-.logo-icon {
-    width: 70px;
-    height: 70px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    box-shadow: 0 10px 40px rgba(78,205,196,0.4);
-}
+    .toast-message {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 15px;
+        padding: 20px 25px;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideIn 0.5s ease;
+        margin-bottom: 15px;
+        border: 1px solid rgba(255,255,255,0.1);
+    }
 
-.password-toggle {
-    position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: rgba(255,255,255,0.5);
-    cursor: pointer;
-    z-index: 10;
-}
+    .toast-success {
+        background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+    }
 
-.password-toggle:hover {
-    color: var(--primary);
-}
+    .toast-error {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    .divider {
+        border-top: 1px solid rgba(255,255,255,0.1);
+        margin: 2rem 0;
+    }
+
+    .register-link {
+        color: rgba(255,255,255,0.7);
+        transition: all 0.3s ease;
+    }
+
+    .register-link:hover {
+        color: var(--secondary);
+        text-decoration: none;
+    }
 </style>
 {% endblock %}
 
@@ -220,23 +240,23 @@ body {
 
 <main class="main-content py-5">
     <div class="container">
-        <div class="row justify-content-center">
+        <div class="row justify-content-center align-items-center min-vh-75">
             <div class="col-lg-5 col-md-7">
-                <div class="glass-card p-5">
+                <div class="glass-card">
                     <!-- Header -->
                     <div class="text-center mb-5">
-                        <div class="logo-icon mx-auto mb-4">
+                        <div class="logo-icon mb-4">
                             <i class="fas fa-car text-white"></i>
                         </div>
-                        <h1 class="text-white fw-bold mb-2">LOVOI</h1>
-                        <p class="text-white-50">Connectez-vous à votre compte</p>
+                        <h1 class="text-white fw-bold mb-2" style="font-size: 2rem;">Bienvenue</h1>
+                        <p class="text-white-50 mb-0">Connectez-vous à votre compte LOVOI</p>
                     </div>
 
                     <!-- Success Messages -->
                     {% if messages %}
                         {% for message in messages %}
                             {% if message.tags == 'success' %}
-                            <div class="success-toast mb-4">
+                            <div class="toast-message toast-success mb-4">
                                 <i class="fas fa-check-circle"></i>
                                 {{ message }}
                             </div>
@@ -248,7 +268,7 @@ body {
                     {% if messages %}
                         {% for message in messages %}
                             {% if message.tags == 'error' %}
-                            <div class="error-toast mb-4">
+                            <div class="toast-message toast-error mb-4">
                                 <i class="fas fa-exclamation-circle"></i>
                                 {{ message }}
                             </div>
@@ -264,17 +284,17 @@ body {
                             <label class="glass-label">Nom d'utilisateur</label>
                             <div class="input-icon">
                                 <i class="fas fa-user icon"></i>
-                                <input type="text" name="username" class="glass-input w-100"
+                                <input type="text" name="username" class="glass-input"
                                        placeholder="Votre identifiant" required autofocus>
                             </div>
                         </div>
 
                         <!-- Password -->
-                        <div class="mb-4">
+                        <div class="mb-2">
                             <label class="glass-label">Mot de passe</label>
                             <div class="input-icon">
                                 <i class="fas fa-lock icon"></i>
-                                <input type="password" name="password" id="password" class="glass-input w-100"
+                                <input type="password" name="password" id="password" class="glass-input"
                                        placeholder="••••••••" required>
                                 <span class="password-toggle" onclick="togglePassword()">
                                     <i class="fas fa-eye" id="eye-icon"></i>
@@ -282,8 +302,13 @@ body {
                             </div>
                         </div>
 
+                        <!-- Forgot Password -->
+                        <div class="text-end mb-4">
+                            <a href="#" class="text-white-50 small" style="text-decoration: none;">Mot de passe oublié ?</a>
+                        </div>
+
                         <!-- Submit -->
-                        <div class="mt-5">
+                        <div class="mt-4">
                             <button type="submit" class="btn-gradient">
                                 <i class="fas fa-sign-in-alt me-2"></i>Se connecter
                             </button>
@@ -291,12 +316,20 @@ body {
                     </form>
 
                     <!-- Register Link -->
-                    <div class="text-center mt-4 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div class="divider"></div>
+                    <div class="text-center">
                         <p class="text-white-50 mb-3">Pas encore de compte ?</p>
-                        <a href="{% url 'accounts:register' %}" class="btn btn-outline-light rounded-pill px-5 py-2">
-                            <i class="fas fa-user-plus me-2"></i>Créer un compte
+                        <a href="{% url 'accounts:register' %}" class="register-link">
+                            <i class="fas fa-user-plus me-2"></i>Créer un compte gratuit
                         </a>
                     </div>
+                </div>
+
+                <!-- Back to Home -->
+                <div class="text-center mt-4">
+                    <a href="/" class="text-white-50" style="text-decoration: none;">
+                        <i class="fas fa-arrow-left me-2"></i>Retour à l'accueil
+                    </a>
                 </div>
             </div>
         </div>

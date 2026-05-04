@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LOVOI - Location de Voitures{% endblock %}</title>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}" />
+    {% block extra_css %}{% endblock %}
+</head>
+<style>
+    :root {
+        --primary: #ff6b6b;
+        --primary-dark: #ee5a5a;
+        --secondary: #4ecdc4;
+        --secondary-dark: #3dbdb5;
+        --dark: #1a1a2e;
+        --darker: #0f0f1a;
+        --glass: rgba(255,255,255,0.05);
+        --glass-border: rgba(255,255,255,0.1);
+        --glass-hover: rgba(255,255,255,0.08);
+    }
+
+    * {
+        font-family: 'Inter', system-ui, sans-serif;
+    }
+
+    body {
+        background: linear-gradient(135deg, var(--dark), var(--darker));
+        min-height: 100vh;
+    }
+
+    /* Glass Navbar */
+    .glass-navbar {
+        background: rgba(255,255,255,0.05) !important;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 4px 30px rgba(0,0,0,0.2);
+    }
+
+    .navbar-brand {
+        font-weight: 700;
+        font-size: 1.5rem;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        padding: 8px 20px;
+        border-radius: 50px;
+        color: white !important;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .navbar-brand:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(255,107,107,0.4);
+        color: white;
+    }
+
+    .navbar-brand .brand-icon {
+        margin-right: 5px;
+    }
+
+    .navbar-dark .navbar-toggler {
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 8px 12px;
+    }
+
+    .navbar-dark .navbar-toggler-icon {
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba%28255,255,255,0.75%29' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+    }
+
+    .glass-nav-link {
+        color: rgba(255,255,255,0.8) !important;
+        padding: 10px 15px !important;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+        margin: 0 3px;
+    }
+
+    .glass-nav-link:hover {
+        color: var(--primary) !important;
+        background: rgba(255,107,107,0.1);
+    }
+
+    .glass-nav-link.active {
+        color: var(--secondary) !important;
+        background: rgba(78,205,196,0.15);
+    }
+
+    .user-badge {
+        background: rgba(78,205,196,0.15);
+        border: 1px solid rgba(78,205,196,0.3);
+        border-radius: 50px;
+        padding: 5px 15px;
+        color: var(--secondary);
+    }
+
+    /* Glass Card */
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    }
+
+    /* Glass Table */
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+
+    .glass-table thead th {
+        color: white;
+        font-weight: 600;
+        padding: 15px 20px;
+        border: none;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        padding: 15px 20px;
+        border-color: rgba(255,255,255,0.05);
+        vertical-align: middle;
+    }
+
+    .glass-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.05);
+    }
+
+    /* Toast Container */
+    .toast-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+    }
+
+    .custom-toast {
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 15px;
+        padding: 20px 25px;
+        color: white;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        animation: slideIn 0.5s ease;
+        margin-bottom: 10px;
+        min-width: 300px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .toast-success {
+        background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+    }
+
+    .toast-error {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    }
+
+    .toast-warning {
+        background: linear-gradient(135deg, #ffe66d, #ffc107);
+        color: #333;
+    }
+
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+    }
+
+    @keyframes fadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+    }
+
+    /* Footer */
+    .glass-footer {
+        background: linear-gradient(135deg, var(--dark), var(--darker));
+        border-top: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* Buttons */
+    .btn-glass {
+        border-radius: 50px;
+        padding: 12px 25px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .btn-glass-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        box-shadow: 0 8px 25px rgba(255,107,107,0.35);
+    }
+
+    .btn-glass-primary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(255,107,107,0.45);
+        color: white;
+    }
+
+    .btn-glass-secondary {
+        background: linear-gradient(135deg, var(--secondary), var(--secondary-dark));
+        color: white;
+        box-shadow: 0 8px 25px rgba(78,205,196,0.35);
+    }
+
+    .btn-glass-secondary:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(78,205,196,0.45);
+        color: white;
+    }
+
+    .btn-glass-outline {
+        background: transparent;
+        border: 2px solid rgba(255,255,255,0.2);
+        color: white;
+    }
+
+    .btn-glass-outline:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.3);
+        color: white;
+    }
+
+    /* Form Inputs */
+    .glass-input {
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 14px 20px;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .glass-input:focus {
+        background: rgba(255,255,255,0.12);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
+        outline: none;
+        color: white;
+    }
+
+    .glass-input::placeholder {
+        color: rgba(255,255,255,0.45);
+    }
+
+    .glass-select {
+        background: rgba(255,255,255,0.08);
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 15px;
+        padding: 14px 20px;
+        color: white;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        width: 100%;
+        cursor: pointer;
+    }
+
+    .glass-select:focus {
+        background: rgba(255,255,255,0.12);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(255,107,107,0.2);
+        outline: none;
+        color: white;
+    }
+
+    .glass-select option {
+        background: var(--dark);
+        color: white;
+    }
+
+    .glass-label {
+        color: rgba(255,255,255,0.8);
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 8px;
+        display: block;
+    }
+
+    /* Cards */
+    .card-glass {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        transition: all 0.3s ease;
+    }
+
+    .card-glass:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 45px rgba(0,0,0,0.4);
+        border-color: rgba(255,255,255,0.15);
+    }
+</style>
+</head>
+<body>
+    {% if messages %}
+    <div class="toast-container">
+        {% for message in messages %}
+        <div class="custom-toast toast-{{ message.tags }}">
+            <i class="fas {% if message.tags == 'success' %}fa-check-circle{% elif message.tags == 'error' %}fa-exclamation-circle{% elif message.tags == 'warning' %}fa-exclamation-triangle{% else %}fa-info-circle{% endif %}"></i>
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.custom-toast').forEach(toast => {
+                toast.style.animation = 'fadeOut 0.5s ease forwards';
+                setTimeout(() => toast.remove(), 500);
+            });
+        }, 4000);
+    </script>
+    {% endif %}
+
+    {% if request.user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark glass-navbar">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="brand-icon">◈</span> LOVOI
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item"><a class="nav-link glass-nav-link" href="/"><i class="fas fa-home me-1"></i> Accueil</a></li>
+                    <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'vehicles:vehicle_list' %}"><i class="fas fa-car me-1"></i> Véhicules</a></li>
+                    {% if request.user.is_admin %}
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_admin' %}"><i class="fas fa-chart-line me-1"></i> Dashboard</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:reservation_list' %}"><i class="fas fa-calendar-check me-1"></i> Réservations</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'vehicles:maintenance_list' %}"><i class="fas fa-wrench me-1"></i> Maintenances</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'vehicles:document_list' %}"><i class="fas fa-file-alt me-1"></i> Documents</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:user_list' %}"><i class="fas fa-users me-1"></i> Utilisateurs</a></li>
+                    {% elif request.user.is_client %}
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_client' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:my_reservations' %}"><i class="fas fa-book me-1"></i> Mes Réservations</a></li>
+                    {% elif request.user.is_employe %}
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_employe' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:etat_des_lieux_list' %}"><i class="fas fa-clipboard-check me-1"></i> États des Lieux</a></li>
+                    {% elif request.user.is_livreur %}
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_livreur' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:livraison_list' %}"><i class="fas fa-truck me-1"></i> Livraisons</a></li>
+                    {% elif request.user.is_technicien %}
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_technicien' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'vehicles:maintenance_list' %}"><i class="fas fa-wrench me-1"></i> Maintenances</a></li>
+                    {% endif %}
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link glass-nav-link" href="{% url 'accounts:notifications' %}">
+                            <i class="fas fa-bell"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link glass-nav-link user-badge" href="{% url 'accounts:profile' %}">
+                            <i class="fas fa-user-circle me-1"></i> {{ request.user.username }}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link glass-nav-link text-warning" href="{% url 'accounts:logout' %}">
+                            <i class="fas fa-sign-out-alt me-1"></i>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% else %}
+    <nav class="navbar navbar-expand-lg navbar-dark glass-navbar">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <span class="brand-icon">◈</span> LOVOI
+            </a>
+            <div class="navbar-nav ms-auto flex-row gap-2">
+                <a class="nav-link glass-nav-link" href="{% url 'accounts:login' %}">
+                    <i class="fas fa-sign-in-alt me-1"></i> Connexion
+                </a>
+                <a class="nav-link glass-nav-link btn-glass btn-glass-outline" href="{% url 'accounts:register' %}">
+                    <i class="fas fa-user-plus me-1"></i> S'inscrire
+                </a>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="glass-footer text-white py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h4 class="fw-bold mb-3"><span class="text-primary">◈</span> LOVOI</h4>
+                    <p class="text-white-50 mb-3">Votre agence de location de voitures de confiance au Maroc.</p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white-50 fs-5"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="text-white-50 fs-5"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="text-white-50 fs-5"><i class="fab fa-twitter"></i></a>
+                    </div>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h6 class="fw-bold text-uppercase text-primary mb-3">Services</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Location voiture</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Livraison</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-2 mb-4 mb-md-0">
+                    <h6 class="fw-bold text-uppercase text-primary mb-3">Info</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">À propos</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">Contact</a></li>
+                        <li class="mb-2"><a href="#" class="text-white-50 text-decoration-none">FAQ</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h6 class="fw-bold text-uppercase text-primary mb-3">Contact</h6>
+                    <ul class="list-unstyled text-white-50">
+                        <li class="mb-2"><i class="fas fa-map-marker-alt me-2 text-primary"></i> Casablanca, Maroc</li>
+                        <li class="mb-2"><i class="fas fa-phone me-2 text-primary"></i> +212 6 12 34 56 78</li>
+                        <li class="mb-2"><i class="fas fa-envelope me-2 text-primary"></i> contact@lovoi.ma</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4 border-secondary">
+            <p class="text-center text-white-50 mb-0">© 2026 LOVOI - Tous droits réservés</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{% static 'leaflet/leaflet.js' %}"></script>
+    <script src="{% static 'js/main.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

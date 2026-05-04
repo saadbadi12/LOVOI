@@ -1,38 +1,103 @@
 {% extends 'base.html' %}
 {% block title %}Slot - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Ajouter Slot</h1>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card-body {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+        padding: 30px;
+    }
+    .btn-glass-success {
+        background: linear-gradient(135deg, #4ecdc4, #3dbdb5);
+        border: none;
+        color: #fff;
+        padding: 12px 28px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(78,205,196,0.3);
+    }
+    .btn-glass-success:hover {
+        background: linear-gradient(135deg, #3dbdb5, #4ecdc4);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(78,205,196,0.4);
+        color: #fff;
+    }
+    .form-select, .form-control {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        border-radius: 12px;
+        padding: 12px 16px;
+        transition: all 0.3s ease;
+    }
+    .form-select:focus, .form-control:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(78,205,196,0.5);
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.15);
+        color: #fff;
+        outline: none;
+    }
+    .form-select option {
+        background: #1a1a2e;
+        color: #fff;
+    }
+    label {
+        color: rgba(255,255,255,0.8);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
 
-    <div class="card mt-4">
-        <div class="card-body">
-            <form method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label>Localisation</label>
-                    <input type="text" name="localisation" class="form-control" required>
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Ajouter Slot</h1>
+
+    <div class="glass-card-body">
+        <form method="post">
+            {% csrf_token %}
+            <div class="mb-4">
+                <label>Localisation</label>
+                <input type="text" name="localisation" class="form-control" required placeholder="Ex: Parking A, Étage 2...">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <label>Type</label>
+                    <select name="type" class="form-select">
+                        <option value="STANDARD">Standard</option>
+                        <option value="COUVERT">Couvert</option>
+                        <option value="SECURISE">Sécurisé</option>
+                    </select>
                 </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label>Type</label>
-                        <select name="type" class="form-select">
-                            <option value="STANDARD">Standard</option>
-                            <option value="COUVERT">Couvert</option>
-                            <option value="SECURISE">Sécurisé</option>
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label>Disponible</label>
-                        <select name="disponible" class="form-select">
-                            <option value="True">Oui</option>
-                            <option value="False">Non</option>
-                        </select>
-                    </div>
+                <div class="col-md-6 mb-4">
+                    <label>Disponible</label>
+                    <select name="disponible" class="form-select">
+                        <option value="True">Oui</option>
+                        <option value="False">Non</option>
+                    </select>
                 </div>
-                <button type="submit" class="btn btn-success">Enregistrer</button>
-            </form>
-        </div>
+            </div>
+            <button type="submit" class="btn btn-glass-success">
+                <i class="fas fa-save me-2"></i>Enregistrer
+            </button>
+        </form>
     </div>
 </div>
 {% endblock %}

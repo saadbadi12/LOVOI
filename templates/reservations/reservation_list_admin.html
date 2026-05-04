@@ -1,53 +1,202 @@
 {% extends 'base.html' %}
 {% block title %}Réservations - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Gestion des Réservations</h1>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .btn-glass-primary {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border: none;
+        color: #fff;
+        padding: 10px 24px;
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(255,107,107,0.3);
+    }
+    .btn-glass-primary:hover {
+        background: linear-gradient(135deg, #ee5a5a, #ff6b6b);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(255,107,107,0.4);
+        color: #fff;
+    }
+    .btn-glass-secondary {
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+        padding: 8px 18px;
+        border-radius: 10px;
+        transition: all 0.3s ease;
+    }
+    .btn-glass-secondary:hover {
+        background: rgba(255,255,255,0.15);
+        border-color: rgba(255,255,255,0.25);
+        color: #fff;
+    }
+    .badge-status {
+        padding: 6px 12px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-success { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
+    .badge-danger { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
+    .badge-primary { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
+    .badge-info { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
+    .text-muted { color: rgba(255,255,255,0.5) !important; }
+    .form-select, .form-control {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+        border-radius: 12px;
+        padding: 10px 16px;
+    }
+    .form-select:focus, .form-control:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: rgba(78,205,196,0.5);
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.1);
+        color: #fff;
+        outline: none;
+    }
+    .form-select option {
+        background: #1a1a2e;
+        color: #fff;
+    }
+    h1, h2, h3 {
+        color: #fff;
+        font-weight: 700;
+    }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .filter-form {
+        background: rgba(255,255,255,0.03);
+        padding: 16px 20px;
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.05);
+    }
+    .pagination .page-link {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: #fff;
+    }
+    .pagination .page-item.active .page-link {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border-color: #ff6b6b;
+    }
+    .pagination .page-link:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
+        color: #fff;
+    }
+</style>
+{% endblock %}
 
-    <form method="get" class="mt-3">
-        <select name="statut" class="form-select" onchange="this.form.submit()">
-            <option value="">Tous les statuts</option>
-            <option value="EN_ATTENTE" {% if request.GET.statut == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
-            <option value="CONFIRMEE" {% if request.GET.statut == 'CONFIRMEE' %}selected{% endif %}>Confirmée</option>
-            <option value="EN_COURS" {% if request.GET.statut == 'EN_COURS' %}selected{% endif %}>En cours</option>
-            <option value="TERMINEE" {% if request.GET.statut == 'TERMINEE' %}selected{% endif %}>Terminée</option>
-            <option value="ANNULEE" {% if request.GET.statut == 'ANNULEE' %}selected{% endif %}>Annulée</option>
-        </select>
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Gestion des Réservations</h1>
+
+    <form method="get" class="filter-form mb-4">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label class="text-white-50 small mb-1">Filtrer par statut</label>
+                <select name="statut" class="form-select" onchange="this.form.submit()">
+                    <option value="">Tous les statuts</option>
+                    <option value="EN_ATTENTE" {% if request.GET.statut == 'EN_ATTENTE' %}selected{% endif %}>En attente</option>
+                    <option value="CONFIRMEE" {% if request.GET.statut == 'CONFIRMEE' %}selected{% endif %}>Confirmée</option>
+                    <option value="EN_COURS" {% if request.GET.statut == 'EN_COURS' %}selected{% endif %}>En cours</option>
+                    <option value="TERMINEE" {% if request.GET.statut == 'TERMINEE' %}selected{% endif %}>Terminée</option>
+                    <option value="ANNULEE" {% if request.GET.statut == 'ANNULEE' %}selected{% endif %}>Annulée</option>
+                </select>
+            </div>
+        </div>
     </form>
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Client</th>
-                <th>Véhicule</th>
-                <th>Date début</th>
-                <th>Date fin</th>
-                <th>Montant</th>
-                <th>Statut</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for res in page_obj %}
-            <tr>
-                <td>{{ res.id }}</td>
-                <td>{{ res.client }}</td>
-                <td>{{ res.vehicule }}</td>
-                <td>{{ res.date_debut }}</td>
-                <td>{{ res.date_fin }}</td>
-                <td>{{ res.montant_total }} MAD</td>
-                <td><span class="badge bg-{% if res.statut_reservation == 'TERMINEE' %}success{% elif res.statut_reservation == 'EN_COURS' %}primary{% elif res.statut_reservation == 'ANNULEE' %}danger{% else %}warning{% endif %}">{{ res.get_statut_reservation_display }}</span></td>
-                <td>
-                    <a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-outline-primary">Voir</a>
-                    {% if res.statut_reservation == 'EN_ATTENTE' %}
-                        <a href="{% url 'reservations:reservation_confirm' res.pk %}" class="btn btn-sm btn-success">Confirmer</a>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Véhicule</th>
+                    <th>Date début</th>
+                    <th>Date fin</th>
+                    <th>Montant</th>
+                    <th>Statut</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in page_obj %}
+                <tr>
+                    <td class="fw-bold">#{{ res.id }}</td>
+                    <td>{{ res.client }}</td>
+                    <td>{{ res.vehicule }}</td>
+                    <td>{{ res.date_debut }}</td>
+                    <td>{{ res.date_fin }}</td>
+                    <td class="text-warning fw-semibold">{{ res.montant_total }} MAD</td>
+                    <td>
+                        <span class="badge-status {% if res.statut_reservation == 'TERMINEE' %}badge-success{% elif res.statut_reservation == 'EN_COURS' %}badge-primary{% elif res.statut_reservation == 'ANNULEE' %}badge-danger{% else %}badge-warning{% endif %}">
+                            {{ res.get_statut_reservation_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-glass-secondary mb-1">Voir</a>
+                        {% if res.statut_reservation == 'EN_ATTENTE' %}
+                            <a href="{% url 'reservations:reservation_confirm' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Confirmer</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="text-center text-white-50 py-4">Aucune réservation trouvée.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

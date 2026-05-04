@@ -1,37 +1,94 @@
 {% extends 'base.html' %}
 {% block title %}Paiements - LOVOI{% endblock %}
 
-{% block content %}
-<div class="container mt-4">
-    <h1>Paiements</h1>
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .glass-table {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        overflow: hidden;
+    }
+    .glass-table thead {
+        background: rgba(255,255,255,0.1);
+    }
+    .glass-table thead th {
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        padding: 16px;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .glass-table tbody td {
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.05);
+        padding: 14px 16px;
+        vertical-align: middle;
+    }
+    .glass-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+    }
+    .page-title {
+        font-size: 1.75rem;
+        background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .text-warning { color: #ffc107 !important; }
+    .text-success { color: #4ecdc4 !important; }
+</style>
+{% endblock %}
 
-    <table class="table table-striped mt-4">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Réservation</th>
-                <th>Type</th>
-                <th>Montant</th>
-                <th>Mode</th>
-                <th>Statut</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for p in paiements %}
-            <tr>
-                <td>{{ p.id }}</td>
-                <td>{{ p.reservation.id }}</td>
-                <td>{{ p.get_type_display }}</td>
-                <td>{{ p.amount }} MAD</td>
-                <td>{{ p.get_mode_display }}</td>
-                <td>{{ p.get_statut_display }}</td>
-                <td>{{ p.date_paiement|date:"d/m/Y H:i" }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="7" class="text-center">Aucun paiement.</td></tr>
-            {% endfor %}
-        </tbody>
-    </table>
+{% block content %}
+<div class="container mt-4 pb-5">
+    <h1 class="page-title mb-4">Paiements</h1>
+
+    <div class="glass-table-wrapper">
+        <table class="table glass-table mb-0">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Réservation</th>
+                    <th>Type</th>
+                    <th>Montant</th>
+                    <th>Mode</th>
+                    <th>Statut</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in paiements %}
+                <tr>
+                    <td class="fw-bold">#{{ p.id }}</td>
+                    <td>#{{ p.reservation.id }}</td>
+                    <td>{{ p.get_type_display }}</td>
+                    <td class="text-warning fw-semibold">{{ p.amount }} MAD</td>
+                    <td>{{ p.get_mode_display }}</td>
+                    <td class="text-success">{{ p.get_statut_display }}</td>
+                    <td class="text-white-50">{{ p.date_paiement|date:"d/m/Y H:i" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-white-50 py-4">Aucun paiement.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}
