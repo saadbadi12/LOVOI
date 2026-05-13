@@ -10,20 +10,21 @@ class UtilisateurAdmin(UserAdmin):
     form = UtilisateurChangeForm
     model = Utilisateur
 
-    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'is_active', 'date_inscription')
-    list_filter = ('role', 'is_active', 'is_staff', 'date_inscription')
+    list_display = ('username', 'email', 'first_name', 'last_name', 'role', 'actif', 'is_active', 'date_inscription')
+    list_editable = ('role', 'actif')
+    list_filter = ('role', 'actif', 'is_active', 'is_staff', 'date_inscription')
     search_fields = ('username', 'email', 'first_name', 'last_name')
     ordering = ('-date_inscription',)
 
     fieldsets = UserAdmin.fieldsets + (
         ('Informations LOVOI', {
-            'fields': ('telephone', 'adresse', 'permis_numero', 'permis_date', 'photo', 'role', 'poste', 'specialite')
+            'fields': ('telephone', 'adresse', 'permis_numero', 'permis_date', 'photo', 'role', 'actif', 'poste', 'specialite')
         }),
     )
 
     add_fieldsets = UserAdmin.add_fieldsets + (
         ('Informations LOVOI', {
-            'fields': ('telephone', 'adresse', 'permis_numero', 'permis_date', 'role', 'poste', 'specialite')
+            'fields': ('telephone', 'adresse', 'permis_numero', 'permis_date', 'role', 'actif', 'poste', 'specialite')
         }),
     )
 

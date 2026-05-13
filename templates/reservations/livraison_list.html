@@ -6,17 +6,17 @@
     body {
         background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
         min-height: 100vh;
-        color: #fff;
+        color: #333;
     }
     .glass-card {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 20px;
     }
     .glass-table {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
@@ -24,10 +24,10 @@
         overflow: hidden;
     }
     .glass-table thead {
-        background: rgba(255,255,255,0.1);
+        background: rgba(40,40,60,0.9);
     }
     .glass-table thead th {
-        color: #fff;
+        color: #333;
         font-weight: 600;
         border: none;
         padding: 16px;
@@ -35,19 +35,23 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .glass-table tbody {
+        background: transparent;
+    }
     .glass-table tbody td {
-        color: rgba(255,255,255,0.85);
-        border-color: rgba(255,255,255,0.05);
+        color: #333;
+        border-color: rgba(0,0,0,0.05);
         padding: 14px 16px;
         vertical-align: middle;
+        background: rgba(255,255,255,0.85);
     }
-    .glass-table tbody tr:hover {
-        background: rgba(255,255,255,0.03);
+    .glass-table tbody tr:hover td {
+        background: rgba(255,255,255,1);
     }
     .btn-glass-primary {
         background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
         border: none;
-        color: #fff;
+        color: #333;
         padding: 10px 24px;
         border-radius: 12px;
         font-weight: 600;
@@ -58,7 +62,7 @@
         background: linear-gradient(135deg, #ee5a5a, #ff6b6b);
         transform: translateY(-2px);
         box-shadow: 0 6px 20px rgba(255,107,107,0.4);
-        color: #fff;
+        color: #333;
     }
     .badge-status {
         padding: 6px 12px;
@@ -68,7 +72,7 @@
     }
     .badge-success { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
     .badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
-    .badge-secondary { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); }
+    .badge-secondary { background: rgba(40,40,60,0.9); color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.15); }
     .page-title {
         font-size: 1.75rem;
         background: linear-gradient(135deg, #fff, rgba(255,255,255,0.7));
@@ -77,7 +81,7 @@
         background-clip: text;
     }
     .map-card {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
@@ -85,7 +89,7 @@
         overflow: hidden;
     }
     .map-card-header {
-        background: rgba(255,255,255,0.08);
+        background: rgba(255,255,255,1);
         padding: 16px 20px;
         border-bottom: 1px solid rgba(255,255,255,0.05);
     }
@@ -138,7 +142,7 @@
                     <td>{{ l.get_type_display }}</td>
                     <td>{{ l.date_livraison }} {{ l.heure_livraison }}</td>
                     <td>
-                        <span class="badge-status {% if l.statut == 'LIVREE' %}badge-success{% elif l.statut == 'EN_COURS' %}badge-warning{% else %}badge-secondary{% endif %}">
+                        <span class="badge-status {% if l.statut == 'TERMINEE' %}badge-success{% elif l.statut == 'EN_COURS' %}badge-warning{% else %}badge-secondary{% endif %}">
                             {{ l.get_statut_display }}
                         </span>
                     </td>
@@ -152,20 +156,29 @@
         </table>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_js %}
 <script>
 const map = L.map('livraison-map').setView([31.7917, -7.0926], 6);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap contributors'
 }).addTo(map);
 
 const markers = [];
 {% for l in livraisons %}
 {% if l.latitude and l.longitude %}
-const m = L.marker([{{ l.latitude }}, {{ l.longitude }}])
+L.marker([{{ l.latitude|stringformat:'f' }}, {{ l.longitude|stringformat:'f' }}], {
+    icon: L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#4ecdc4;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    })
+})
     .addTo(map)
-    .bindPopup('<strong>{{ l.reservation.client }}</strong><br>{{ l.lieu_livraison }}<br><small>Réservation #{{ l.reservation.id }} - {{ l.get_type_display }}</small>');
-markers.push([{{ l.latitude }}, {{ l.longitude }}]);
+    .bindPopup("<div style='color:#333;'><strong>{{ l.reservation.client|escape }}</strong><br>{{ l.lieu_livraison|escape }}</div>");
+markers.push([{{ l.latitude|stringformat:'f' }}, {{ l.longitude|stringformat:'f' }}]);
 {% endif %}
 {% endfor %}
 

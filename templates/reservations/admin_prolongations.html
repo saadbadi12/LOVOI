@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Demandes de Prolongation - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h1 class="mb-4">Demandes de prolongation</h1>
+
+    <div class="table-responsive">
+        <table class="table table-dark table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Réservation</th>
+                    <th>Client</th>
+                    <th>Nouvelle fin</th>
+                    <th>Statut</th>
+                    <th>Créée le</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for d in demandes %}
+                <tr>
+                    <td>{{ d.id }}</td>
+                    <td><a href="{% url 'reservations:reservation_detail' d.reservation.pk %}">#{{ d.reservation.id }}</a></td>
+                    <td>{{ d.reservation.client.get_full_name }}</td>
+                    <td>{{ d.nouvelle_date_fin }}</td>
+                    <td>{{ d.get_statut_display }}</td>
+                    <td>{{ d.created_at|date:'d/m/Y H:i' }}</td>
+                    <td>
+                        {% if d.statut == 'EN_ATTENTE' %}
+                        <form method="post" action="{% url 'reservations:accepter_prolongation' d.pk %}" style="display:inline-block;">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-success">Accepter</button>
+                        </form>
+                        <form method="post" action="{% url 'reservations:refuser_prolongation' d.pk %}" style="display:inline-block; margin-left:6px;">
+                            {% csrf_token %}
+                            <input type="hidden" name="motif_refus" value="Refus admin">
+                            <button class="btn btn-sm btn-danger">Refuser</button>
+                        </form>
+                        {% else %}
+                            {% if d.motif_refus %}
+                                <div class="text-danger">Motif: {{ d.motif_refus }}</div>
+                            {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center">Aucune demande.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -108,6 +108,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <th>Véhicule</th>
                         <th>Type</th>
                         <th>Date prévue</th>
+                        <th>Technicien</th>
                         <th>Statut</th>
                         <th>Coût</th>
                         <th>Actions</th>
@@ -119,6 +120,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <td class="fw-bold">{{ m.vehicule }}</td>
                         <td>{{ m.get_type_display }}</td>
                         <td class="text-white-50">{{ m.date_prevue|date:"d/m/Y" }}</td>
+                        <td>{{ m.technicien|default:"-" }}</td>
                         <td>
                             <span class="status-badge status-{% if m.statut == 'MAINTENANCE_REQUISE' %}requise{% elif m.statut == 'EN_MAINTENANCE' %}en{% else %}terminee{% endif %}">
                                 {{ m.get_statut_display }}
@@ -131,9 +133,9 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                             </a>
                         </td>
                     </tr>
-                    {% empty %}
+                    {% empty }
                     <tr>
-                        <td colspan="6" class="text-center py-5">
+                        <td colspan="7" class="text-center py-5">
                             <div style="font-size: 3rem; margin-bottom: 1rem;">🔧</div>
                             <p class="text-white-50 mb-0">Aucune maintenance.</p>
                         </td>

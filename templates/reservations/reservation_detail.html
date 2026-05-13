@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Réservation #{{ reservation.id }} - LOVOI{% endblock %}
+{% block title %}Réservation {{ reservation.reference }} - LOVOI{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -67,7 +67,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="text-white fw-bold mb-1">Réservation #{{ reservation.id }}</h1>
+            <h1 class="text-white fw-bold mb-1">Réservation {{ reservation.reference }}</h1>
             <p class="text-white-50 mb-0">Créée le {{ reservation.date_reservation|date:"d/m/Y à H:i" }}</p>
         </div>
         <div>
@@ -225,18 +225,11 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 {% endif %}
 
                 {% if reservation.statut_reservation == 'CONFIRMEE' %}
-                    <a href="{% url 'reservations:reservation_start' reservation.pk %}" class="action-btn btn-start w-100 mb-2">
-                        <i class="fas fa-play"></i> Démarrer Location
-                    </a>
-                    <a href="{% url 'reservations:livraison_create' %}" class="action-btn btn-deliver w-100 mb-2">
-                        <i class="fas fa-truck"></i> Planifier Livraison
-                    </a>
-                {% endif %}
-
-                {% if reservation.statut_reservation == 'EN_COURS' %}
-                    <a href="{% url 'reservations:reservation_end' reservation.pk %}" class="action-btn btn-end w-100 mb-2">
-                        <i class="fas fa-flag-checkered"></i> Terminer Location
-                    </a>
+                    {% if reservation.delivery_option == 'LIVRAISON_DOMICILE' and reservation.date_debut == today %}
+                        <a href="{% url 'reservations:assigner_livreur' reservation.pk %}" class="action-btn btn-deliver w-100 mb-2">
+                            <i class="fas fa-truck"></i> Planifier Livraison
+                        </a>
+                    {% endif %}
                 {% endif %}
 
                 {% if reservation.statut_reservation in 'EN_ATTENTE,CONFIRMEE' %}
@@ -245,14 +238,8 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     </a>
                 {% endif %}
 
-                <hr style="border-color: rgba(255,255,255,0.1);">
+                {% comment %} Admin block retained - client prolongation moved to client actions {% endcomment %}
 
-                <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}" class="action-btn btn-secondary w-100 mb-2" style="background: rgba(255,255,255,0.1); color: white;">
-                    <i class="fas fa-clipboard-check"></i> État des Lieux
-                </a>
-                <a href="{% url 'reservations:paiement_create' reservation.pk %}" class="action-btn btn-confirm w-100">
-                    <i class="fas fa-money-bill"></i> Ajouter Paiement
-                </a>
             </div>
             {% endif %}
 
@@ -261,10 +248,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
             <div class="glass-card p-4 mb-4">
                 <h5 class="text-warning mb-4"><i class="fas fa-truck me-2"></i>Actions Livraison</h5>
 
+                {% if reservation.date_debut != today %}
+                    <p class="text-white-50 mb-0">Veuillez attendre la date de départ pour assigner un livreur.</p>
+                {% else %}
                 {% for livraison in reservation.livraisons.all %}
                 <div class="mb-3 p-3" style="background: rgba(255,255,255,0.05); border-radius: 15px;">
                     <p class="text-white-50 mb-1">Statut actuel</p>
-                    <span class="badge bg-{% if livraison.statut == 'LIVREE' or livraison.statut == 'TERMINEE' %}success{% elif livraison.statut == 'EN_COURS' %}primary{% else %}warning{% endif %} mb-3">
+                    <span class="badge bg-{% if livraison.statut == 'TERMINEE' %}success{% elif livraison.statut == 'EN_COURS' %}primary{% else %}warning{% endif %} mb-3">
                         {{ livraison.get_statut_display }}
                     </span>
 
@@ -274,26 +264,21 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         </a>
                     {% endif %}
 
-                    {% if livraison.statut == 'EN_COURS' and livraison.type == 'LIVRAISON' %}
+                    {% if livraison.statut == 'EN_COURS' %}
                         <a href="{% url 'reservations:livraison_delivered' livraison.pk %}" class="action-btn btn-deliver w-100">
                             <i class="fas fa-check-double"></i> Confirmer Livraison
-                        </a>
-                    {% endif %}
-
-                    {% if livraison.statut == 'EN_COURS' and livraison.type == 'RECUPERATION' %}
-                        <a href="{% url 'reservations:livraison_returned' livraison.pk %}" class="action-btn btn-return w-100">
-                            <i class="fas fa-undo"></i> Confirmer Retour
                         </a>
                     {% endif %}
                 </div>
                 {% empty %}
                 <p class="text-white-50">Aucune livraison associée</p>
                 {% endfor %}
+                {% endif %}
             </div>
             {% endif %}
 
             <!-- Client Actions -->
-            {% if user.is_client and reservation.client == user %}
+                {% if user.is_client and reservation.client == user %}
             <div class="glass-card p-4">
                 <h5 class="text-warning mb-4"><i class="fas fa-user me-2"></i>Mon espace</h5>
                 {% if reservation.statut_reservation == 'EN_ATTENTE' %}
@@ -302,6 +287,17 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <p class="text-success"><i class="fas fa-check-circle me-2"></i>Réservation confirmée!</p>
                 {% elif reservation.statut_reservation == 'EN_COURS' %}
                     <p class="text-primary"><i class="fas fa-car me-2"></i>Véhicule en cours de location</p>
+                    {% if reservation.vehicule.statut != 'DISPONIBLE' %}
+                        <form method="POST" action="{% url 'reservations:extend_reservation' reservation.pk %}" class="mt-3">
+                            {% csrf_token %}
+                            <div class="input-group" style="border-radius: 50px; overflow: hidden;">
+                                <input type="date" name="date_fin" class="form-control" min="{{ reservation.date_fin|date:'Y-m-d' }}" value="{{ reservation.date_fin|date:'Y-m-d' }}" required>
+                                <button type="submit" class="btn btn-warning" style="border-radius: 50px;">
+                                    <i class="fas fa-calendar-plus"></i> Demander prolongement
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
                 {% elif reservation.statut_reservation == 'TERMINEE' %}
                     <a href="{% url 'reservations:avis_create' reservation.vehicule.pk %}" class="action-btn btn-confirm w-100">
                         <i class="fas fa-star"></i> Laisser un Avis
@@ -312,34 +308,32 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<link rel="stylesheet" href="{% static 'leaflet/leaflet.css' %}"/>
+<script src="{% static 'leaflet/leaflet.js' %}"></script>
+<style>
+.marker-pin { background: #ff4d6d; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; box-shadow: 0 3px 10px rgba(0,0,0,0.3); }
+</style>
+<script>
+const pinkIcon = L.divIcon({
+    className: 'marker-pin',
+    html: '<i class="fas fa-map-marker-alt" style="color:white;font-size:18px;"></i>',
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+});
 
 {% if reservation.latitude_depart and reservation.longitude_depart %}
-<div class="map-wrapper mb-3">
-    <iframe
-        width="100%"
-        height="250"
-        frameborder="0"
-        scrolling="no"
-        marginheight="0"
-        marginwidth="0"
-        src="https://www.openstreetmap.org/export/embed.html?bbox={{ reservation.longitude_depart|stringformat:'f' }},{{ reservation.latitude_depart|stringformat:'f' }},{{ reservation.longitude_depart|stringformat:'f' }},{{ reservation.latitude_depart|stringformat:'f' }}&layer=mapnik&marker={{ reservation.latitude_depart|stringformat:'f' }},{{ reservation.longitude_depart|stringformat:'f' }}">
-    </iframe>
-    <small><a href="https://www.openstreetmap.org/?mlat={{ reservation.latitude_depart|stringformat:'f' }}&mlon={{ reservation.longitude_depart|stringformat:'f' }}" target="_blank">Voir sur OpenStreetMap</a></small>
-</div>
+const mapDepart = L.map('map-depart').setView([{{ reservation.latitude_depart|stringformat:'f' }}, {{ reservation.longitude_depart|stringformat:'f' }}], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapDepart);
+L.marker([{{ reservation.latitude_depart|stringformat:'f' }}, {{ reservation.longitude_depart|stringformat:'f' }}], { icon: pinkIcon }).addTo(mapDepart);
 {% endif %}
 
 {% if reservation.latitude_retour and reservation.longitude_retour %}
-<div class="map-wrapper">
-    <iframe
-        width="100%"
-        height="250"
-        frameborder="0"
-        scrolling="no"
-        marginheight="0"
-        marginwidth="0"
-        src="https://www.openstreetmap.org/export/embed.html?bbox={{ reservation.longitude_retour|stringformat:'f' }},{{ reservation.latitude_retour|stringformat:'f' }},{{ reservation.longitude_retour|stringformat:'f' }},{{ reservation.latitude_retour|stringformat:'f' }}&layer=mapnik&marker={{ reservation.latitude_retour|stringformat:'f' }},{{ reservation.longitude_retour|stringformat:'f' }}">
-    </iframe>
-    <small><a href="https://www.openstreetmap.org/?mlat={{ reservation.latitude_retour|stringformat:'f' }}&mlon={{ reservation.longitude_retour|stringformat:'f' }}" target="_blank">Voir sur OpenStreetMap</a></small>
-</div>
+const mapRetour = L.map('map-retour').setView([{{ reservation.latitude_retour|stringformat:'f' }}, {{ reservation.longitude_retour|stringformat:'f' }}], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapRetour);
+L.marker([{{ reservation.latitude_retour|stringformat:'f' }}, {{ reservation.longitude_retour|stringformat:'f' }}], { icon: pinkIcon }).addTo(mapRetour);
 {% endif %}
+</script>
 {% endblock %}

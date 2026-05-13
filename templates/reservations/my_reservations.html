@@ -16,7 +16,7 @@
         border-radius: 20px;
     }
     .glass-table {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
@@ -35,14 +35,17 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .glass-table tbody,
+    .glass-table tbody tr,
     .glass-table tbody td {
-        color: rgba(255,255,255,0.85);
+        background: rgba(30,30,50,0.9) !important;
+        color: rgba(255,255,255,0.95) !important;
         border-color: rgba(255,255,255,0.05);
         padding: 14px 16px;
         vertical-align: middle;
     }
-    .glass-table tbody tr:hover {
-        background: rgba(255,255,255,0.03);
+    .glass-table tbody tr:hover td {
+        background: rgba(50,50,70,0.95) !important;
     }
     .btn-glass-secondary {
         background: rgba(255,255,255,0.1);
@@ -56,6 +59,20 @@
         background: rgba(255,255,255,0.15);
         border-color: rgba(255,255,255,0.25);
         color: #fff;
+    }
+    .extension-form {
+        min-width: 250px;
+    }
+    .extension-form .form-control {
+        background: rgba(255,255,255,0.08);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: #fff;
+    }
+    .extension-form .form-control:focus {
+        background: rgba(255,255,255,0.12);
+        border-color: #4ecdc4;
+        color: #fff;
+        box-shadow: none;
     }
     .badge-status {
         padding: 6px 12px;
@@ -111,7 +128,7 @@
             <tbody>
                 {% for res in page_obj %}
                 <tr>
-                    <td class="fw-bold">#{{ res.id }}</td>
+                    <td class="fw-bold">{{ res.reference }}</td>
                     <td>{{ res.vehicule }}</td>
                     <td>{{ res.date_debut }}</td>
                     <td>{{ res.date_fin }}</td>
@@ -123,6 +140,15 @@
                     </td>
                     <td>
                         <a href="{% url 'reservations:reservation_detail' res.pk %}" class="btn btn-sm btn-glass-secondary">Voir</a>
+                        {% if res.statut_reservation == 'EN_COURS' and res.vehicule.statut != 'DISPONIBLE' %}
+                        <form method="post" action="{% url 'reservations:extend_reservation' res.pk %}" class="extension-form mt-2">
+                            {% csrf_token %}
+                            <div class="input-group input-group-sm">
+                                <input type="date" name="date_fin" class="form-control" min="{{ res.date_fin|date:'Y-m-d' }}" required>
+                                <button type="submit" class="btn btn-glass-secondary">Demander prolongement</button>
+                            </div>
+                        </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}

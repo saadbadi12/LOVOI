@@ -3,7 +3,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Paiement - Réservation #{{ reservation.id }}</h1>
+    <h1>Paiement - Réservation {{ reservation.reference }}</h1>
 
     <div class="card mt-4">
         <div class="card-body">
@@ -37,25 +37,25 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="payment_method" value="carte_bancaire" id="carte" checked>
+                            <input class="form-check-input" type="radio" name="payment_method" value="CARTE_BANCAIRE" id="carte" checked>
                             <label class="form-check-label" for="carte">
                                 <strong>Carte bancaire</strong>
                             </label>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check mb-3 d-none">
                             <input class="form-check-input" type="radio" name="payment_method" value="especes" id="especes">
                             <label class="form-check-label" for="especes">
                                 <strong>Espèces</strong>
                             </label>
                         </div>
-                        <div class="form-check mb-3">
+                        <div class="form-check mb-3 d-none">
                             <input class="form-check-input" type="radio" name="payment_method" value="virement" id="virement">
                             <label class="form-check-label" for="virement">
                                 <strong>Virement bancaire</strong>
                             </label>
                         </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="payment_method" value="paypal" id="paypal">
+                        <div class="form-check mb-3 d-none">
+                            <input class="form-check-input" type="radio" name="payment_method" value="PAYPAL" id="paypal">
                             <label class="form-check-label" for="paypal">
                                 <strong>PayPal</strong>
                             </label>

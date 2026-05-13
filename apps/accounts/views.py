@@ -35,6 +35,14 @@ def register_client(request):
                 return render(request, 'accounts/register.html', {'form': form})
             try:
                 user = form.save()
+                # Ensure telephone from the registration form is persisted.
+                # Some code paths previously returned users with empty telephone;
+                # enforce saving the cleaned value after form.save() to guarantee
+                # the database has the submitted phone number.
+                telephone = form.cleaned_data.get('telephone', '')
+                if telephone and (not user.telephone or user.telephone != telephone):
+                    user.telephone = telephone
+                    user.save(update_fields=['telephone'])
                 login(request, user)
                 messages.success(request, 'Compte créé avec succès! Bienvenue ' + user.first_name)
                 return redirect('accounts:dashboard_client')
@@ -99,6 +107,9 @@ def dashboard_client(request):
 @user_passes_test(lambda u: u.is_admin())
 def dashboard_admin(request):
     """Admin dashboard with KPIs."""
+    from django.db.models import Count, Sum, Avg
+    from datetime import datetime, timedelta
+
     total_vehicules = Vehicule.objects.count()
     disponibles = Vehicule.objects.filter(statut='DISPONIBLE').count()
     en_maintenance = Vehicule.objects.filter(statut='EN_MAINTENANCE').count()
@@ -107,7 +118,116 @@ def dashboard_admin(request):
     reservations_en_cours = Reservation.objects.filter(statut_reservation='EN_COURS').count()
     reservations_en_attente = Reservation.objects.filter(statut_reservation='EN_ATTENTE').count()
 
+    # Revenue stats
+    from apps.reservations.models import Paiement
+    total_revenue = Paiement.objects.filter(statut='COMPLETE').aggregate(Sum('amount'))['amount__sum'] or 0
+
+    # Monthly reservations for chart (last 6 months)
+    six_months_ago = datetime.now() - timedelta(days=180)
+    monthly_reservations = []
+    monthly_revenue = []
+    for i in range(5, -1, -1):
+        month_start = datetime.now().replace(day=1) - timedelta(days=30*i)
+        month_end = month_start + timedelta(days=30)
+        count = Reservation.objects.filter(
+            date_reservation__gte=month_start,
+            date_reservation__lt=month_end
+        ).count()
+        revenue = Paiement.objects.filter(
+            statut='COMPLETE',
+            date_paiement__gte=month_start,
+            date_paiement__lt=month_end
+        ).aggregate(Sum('amount'))['amount__sum'] or 0
+        monthly_reservations.append({
+            'month': month_start.strftime('%b'),
+            'count': count
+        })
+        monthly_revenue.append(float(revenue))
+
+    # Vehicle categories distribution
+    categorie_stats = Vehicule.objects.values('categorie__type').annotate(count=Count('id'))
+
+    # Reservation status distribution
+    status_stats = Reservation.objects.values('statut_reservation').annotate(count=Count('id'))
+
+    # Clients with multiple reservations (fideles) - using ORM
+    from django.db.models import Count
+    fideles_qs = Reservation.objects.values('client__id', 'client__username', 'client__first_name', 'client__last_name')\
+        .annotate(count=Count('id'))\
+        .filter(count__gt=1)\
+        .order_by('-count')[:5]
+    clients_fideles_list = []
+    for f in fideles_qs:
+        try:
+            user = Utilisateur.objects.get(id=f['client__id'])
+            clients_fideles_list.append({
+                'id': f['client__id'],
+                'username': f['client__username'],
+                'name': user.get_full_name() or f['client__username'],
+                'count': f['count']
+            })
+        except:
+            pass
+
+    # Vehicles rental count with details - using ORM
+    vehicules_qs = Reservation.objects.values('vehicule__id', 'vehicule__marque', 'vehicule__modele')\
+        .annotate(count=Count('id'))\
+        .order_by('-count')[:5]
+    vehicules_loues_list = []
+    for v in vehicules_qs:
+        vehicules_loues_list.append({
+            'id': v['vehicule__id'],
+            'name': f"{v['vehicule__marque']} {v['vehicule__modele']}",
+            'count': v['count']
+        })
+
+    # Calculate occupation rate
+    vehicules_reserved = Reservation.objects.filter(statut_reservation__in=['CONFIRMEE', 'EN_COURS']).values('vehicule').distinct().count()
+    taux_occupation = int((vehicules_reserved / total_vehicules * 100)) if total_vehicules > 0 else 0
+
+    # Maintenance costs
+    from apps.vehicles.models import Maintenance
+    maintenance_cost = Maintenance.objects.filter(statut='TERMINEE').aggregate(Sum('cout'))['cout__sum'] or 0
+
+    # Monthly maintenance costs for chart
+    maintenance_costs = []
+    for i in range(5, -1, -1):
+        month_start = datetime.now().replace(day=1) - timedelta(days=30*i)
+        month_end = month_start + timedelta(days=30)
+        cost = Maintenance.objects.filter(
+            date_realisee__gte=month_start,
+            date_realisee__lt=month_end,
+            statut='TERMINEE'
+        ).aggregate(Sum('cout'))['cout__sum'] or 0
+        maintenance_costs.append(float(cost))
+
+    # Top clients with total amount spent
+    top_clients_qs = Reservation.objects.values('client__id', 'client__username', 'client__first_name', 'client__last_name')\
+        .annotate(count=Count('id'), total=Sum('montant_total'))\
+        .order_by('-count')[:5]
+    top_clients = []
+    for c in top_clients_qs:
+        try:
+            user = Utilisateur.objects.get(id=c['client__id'])
+            top_clients.append({
+                'id': c['client__id'],
+                'username': c['client__username'],
+                'name': user.get_full_name() or c['client__username'],
+                'count': c['count'],
+                'total': float(c['total'] or 0)
+            })
+        except:
+            pass
+
+    # Add rate to vehicules_loues
+    max_count = vehicules_loues_list[0]['count'] if vehicules_loues_list else 1
+    for v in vehicules_loues_list:
+        v['rate'] = int((v['count'] / max_count) * 100)
+
+    # Recent data
     recent_reservations = Reservation.objects.all().order_by('-date_reservation')[:10]
+    from apps.reservations.models import Livraison
+    recent_livraisons = Livraison.objects.filter(latitude__isnull=False).select_related('reservation', 'livreur')[:10]
     unread = Notification.objects.filter(utilisateur=request.user, lue=False).count()
 
     context = {
@@ -118,7 +238,21 @@ def dashboard_admin(request):
         'total_reservations': total_reservations,
         'reservations_en_cours': reservations_en_cours,
         'reservations_en_attente': reservations_en_attente,
+        'total_revenue': total_revenue,
+        'monthly_reservations': monthly_reservations,
+        'monthly_revenue': monthly_revenue,
+        'categorie_stats': list(categorie_stats),
+        'status_stats': list(status_stats),
+        'clients_fideles_count': len(clients_fideles_list),
+        'clients_fideles': clients_fideles_list,
+        'vehicules_loues_count': len(vehicules_loues_list),
+        'vehicules_loues': vehicules_loues_list,
+        'taux_occupation': taux_occupation,
+        'maintenance_cost': maintenance_cost,
+        'maintenance_costs': maintenance_costs,
+        'top_clients': top_clients,
         'recent_reservations': recent_reservations,
+        'recent_livraisons': recent_livraisons,
         'unread_notifications': unread,
     }
     return render(request, 'accounts/dashboard_admin.html', context)
@@ -128,11 +262,51 @@ def dashboard_admin(request):
 @user_passes_test(lambda u: u.is_employe())
 def dashboard_employe(request):
     """Employee dashboard."""
+    from datetime import date, timedelta
+
+    today = date.today()
+    tomorrow = today + timedelta(days=1)
     etats_des_lieux = EtatDesLieux.objects.filter(
         employe=request.user
     ).order_by('-date')[:10]
+    departs_aujourdhui = Reservation.objects.filter(
+        date_debut=today,
+        statut_reservation='CONFIRMEE',
+    ).select_related('client', 'vehicule').order_by('date_debut')
+    retours_aujourdhui = Reservation.objects.filter(
+        date_fin=today,
+        statut_reservation='EN_COURS',
+    ).select_related('client', 'vehicule').order_by('date_fin')
+    reservations_a_venir = Reservation.objects.filter(
+        date_debut__gt=today,
+    ).select_related('client', 'vehicule').order_by('date_debut')
+    reservations_en_cours = Reservation.objects.filter(
+        statut_reservation='EN_COURS',
+    ).select_related('client', 'vehicule').order_by('date_fin')
+    retours_imminents = Reservation.objects.filter(
+        statut_reservation='EN_COURS',
+        date_fin__gte=today,
+        date_fin__lte=tomorrow,
+    ).select_related('client', 'vehicule').order_by('date_fin')
+
     context = {
         'etats_des_lieux': etats_des_lieux,
+        'departs_aujourdhui': departs_aujourdhui,
+        'retours_aujourdhui': retours_aujourdhui,
+        'reservations_a_venir': reservations_a_venir,
+        'reservations_en_cours': reservations_en_cours,
+        'retours_imminents': retours_imminents,
+        'reservations': list(departs_aujourdhui) + list(retours_aujourdhui),
+        'terminees': etats_des_lieux.count(), # [!code --]
+    } # [!code --]
+    context = { # [!code ++]
+        'etats_des_lieux': etats_des_lieux, # [!code ++]
+        'departs_aujourdhui': departs_aujourdhui, # [!code ++]
+        'retours_aujourdhui': retours_aujourdhui, # [!code ++]
+        'reservations_a_venir': reservations_a_venir, # [!code ++]
+        'reservations_en_cours': reservations_en_cours, # [!code ++]
+        'retours_imminents': retours_imminents, # [!code ++]
+        'terminees': etats_des_lieux.count(), # [!code ++]
     }
     return render(request, 'accounts/dashboard_employe.html', context)
 
@@ -143,10 +317,17 @@ def dashboard_technicien(request):
     """Technician dashboard."""
     from apps.vehicles.models import Maintenance
     mes_maintenances = Maintenance.objects.filter(
-        vehicule__maintenances__isnull=False
-    ).distinct().order_by('-date_prevue')[:10]
+        technicien=request.user
+    ).distinct().order_by('-date_prevue')
+    total = mes_maintenances.count()
+    en_cours = mes_maintenances.filter(statut='EN_MAINTENANCE').count()
+    terminees = mes_maintenances.filter(statut='TERMINEE').count()
+    recent = mes_maintenances[:10]
     context = {
-        'maintenances': mes_maintenances,
+        'maintenances': recent,
+        'total_maintenances': total,
+        'en_cours': en_cours,
+        'terminees': terminees,
     }
     return render(request, 'accounts/dashboard_technicien.html', context)
 
@@ -199,6 +380,32 @@ def user_create(request):
     else:
         form = UtilisateurCreationForm()
     return render(request, 'accounts/user_form.html', {'form': form, 'action': 'Créer'})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin())
+def user_edit(request, pk):
+    """Admin: edit user role and status."""
+    user = get_object_or_404(Utilisateur, pk=pk)
+    if request.method == 'POST':
+        role = request.POST.get('role')
+        actif = request.POST.get('actif') == 'on'
+        valid_roles = [
+            Utilisateur.ROLE_CLIENT,
+            Utilisateur.ROLE_ADMIN,
+            Utilisateur.ROLE_EMPLOYE,
+            Utilisateur.ROLE_TECHNICIEN,
+            Utilisateur.ROLE_LIVREUR,
+        ]
+        if role in valid_roles:
+            user.role = role
+            user.actif = actif
+            user.save(update_fields=['role', 'actif'])
+            messages.success(request, f'Rôle de {user.username} mis à jour.')
+        else:
+            messages.error(request, 'Rôle invalide.')
+        return redirect('accounts:user_list')
+    return render(request, 'accounts/user_edit.html', {'u': user})
 
 
 @login_required

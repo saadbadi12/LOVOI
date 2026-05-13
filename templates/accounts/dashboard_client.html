@@ -177,7 +177,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 <tbody>
                     {% for res in reservations %}
                     <tr>
-                        <td class="fw-bold">#{{ res.id }}</td>
+                        <td class="fw-bold">{{ res.reference }}</td>
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 {% if res.vehicule.photo %}

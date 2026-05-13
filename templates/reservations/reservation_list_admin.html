@@ -9,14 +9,14 @@
         color: #fff;
     }
     .glass-card {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 20px;
     }
     .glass-table {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.1);
@@ -24,7 +24,7 @@
         overflow: hidden;
     }
     .glass-table thead {
-        background: rgba(255,255,255,0.1);
+        background: rgba(40,40,60,0.9);
     }
     .glass-table thead th {
         color: #fff;
@@ -35,14 +35,18 @@
         text-transform: uppercase;
         letter-spacing: 0.5px;
     }
+    .glass-table tbody {
+        background: transparent;
+    }
     .glass-table tbody td {
         color: rgba(255,255,255,0.85);
         border-color: rgba(255,255,255,0.05);
         padding: 14px 16px;
         vertical-align: middle;
+        background: rgba(30,30,50,0.9) !important;
     }
-    .glass-table tbody tr:hover {
-        background: rgba(255,255,255,0.03);
+    .glass-table tbody tr:hover td {
+        background: rgba(50,50,70,0.95) !important;
     }
     .btn-glass-primary {
         background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
@@ -61,7 +65,7 @@
         color: #fff;
     }
     .btn-glass-secondary {
-        background: rgba(255,255,255,0.1);
+        background: rgba(40,40,60,0.9);
         border: 1px solid rgba(255,255,255,0.15);
         color: #fff;
         padding: 8px 18px;
@@ -83,17 +87,17 @@
     .badge-warning { background: rgba(255,193,7,0.2); color: #ffc107; border: 1px solid rgba(255,193,7,0.3); }
     .badge-danger { background: rgba(255,107,107,0.2); color: #ff6b6b; border: 1px solid rgba(255,107,107,0.3); }
     .badge-primary { background: rgba(78,205,196,0.2); color: #4ecdc4; border: 1px solid rgba(78,205,196,0.3); }
-    .badge-info { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
+    .badge-info { background: rgba(40,40,60,0.9); color: rgba(255,255,255,0.7); border: 1px solid rgba(255,255,255,0.15); }
     .text-muted { color: rgba(255,255,255,0.5) !important; }
     .form-select, .form-control {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         border: 1px solid rgba(255,255,255,0.1);
         color: #fff;
         border-radius: 12px;
         padding: 10px 16px;
     }
     .form-select:focus, .form-control:focus {
-        background: rgba(255,255,255,0.08);
+        background: rgba(50,50,70,0.95) !important;
         border-color: rgba(78,205,196,0.5);
         box-shadow: 0 0 0 3px rgba(78,205,196,0.1);
         color: #fff;
@@ -115,13 +119,13 @@
         background-clip: text;
     }
     .filter-form {
-        background: rgba(255,255,255,0.03);
+        background: rgba(30,30,50,0.9) !important;
         padding: 16px 20px;
         border-radius: 16px;
         border: 1px solid rgba(255,255,255,0.05);
     }
     .pagination .page-link {
-        background: rgba(255,255,255,0.05);
+        background: rgba(30,30,50,0.95);
         border: 1px solid rgba(255,255,255,0.1);
         color: #fff;
     }
@@ -130,7 +134,7 @@
         border-color: #ff6b6b;
     }
     .pagination .page-link:hover {
-        background: rgba(255,255,255,0.1);
+        background: rgba(40,40,60,0.9);
         border-color: rgba(255,255,255,0.2);
         color: #fff;
     }
@@ -174,7 +178,7 @@
             <tbody>
                 {% for res in page_obj %}
                 <tr>
-                    <td class="fw-bold">#{{ res.id }}</td>
+                    <td class="fw-bold">{{ res.reference }}</td>
                     <td>{{ res.client }}</td>
                     <td>{{ res.vehicule }}</td>
                     <td>{{ res.date_debut }}</td>

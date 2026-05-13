@@ -1,133 +1,59 @@
 {% extends 'base.html' %}
-{% block title %}Livraison - LOVOI{% endblock %}
-
-{% block extra_css %}
-<style>
-.location-map-wrapper {
-    margin-bottom: 15px;
-}
-.map-container {
-    height: 300px;
-    border-radius: 12px;
-    border: 2px solid #eee;
-}
-.map-instructions {
-    font-size: 0.85rem;
-    color: #6c757d;
-    margin-bottom: 5px;
-}
-.selected-location {
-    background: #fff0f3;
-    padding: 10px 15px;
-    border-radius: 8px;
-    margin-top: 8px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-.selected-location i {
-    color: #ff4d6d;
-}
-.coords-display {
-    font-size: 0.8rem;
-    color: #888;
-}
-</style>
-{% endblock %}
+{% block title %}Planifier Livraison - LOVOI{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Planifier Livraison</h1>
+    <h1 class="mb-3">{% if livraison %}Modifier{% else %}Assigner le Livreur{% endif %}</h1>
 
-    <div class="card mt-4">
+    <div class="card">
         <div class="card-body">
-            <form method="post">
+            <form method="post" action="{% url 'reservations:livraison_create' %}">
                 {% csrf_token %}
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label>Réservation</label>
-                        <select name="reservation" class="form-select" required>
-                            {% for r in reservations %}
-                            <option value="{{ r.id }}">#{{ r.id }} - {{ r.client }} - {{ r.vehicule }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label>Livreur</label>
-                        <select name="livreur" class="form-select">
-                            <option value="">Non assigné</option>
-                            {% for l in livreurs %}
-                            <option value="{{ l.id }}">{{ l }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label>Date</label>
-                        <input type="date" name="date_livraison" class="form-control" required>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label>Heure</label>
-                        <input type="time" name="heure_livraison" class="form-control" required>
-                    </div>
-                </div>
 
-                <!-- Location Map -->
+                {% if reservation %}
                 <div class="mb-3">
-                    <label class="fw-bold">📍 Lieu de livraison</label>
-                    <p class="map-instructions">Cliquez sur la carte pour sélectionner le lieu de livraison</p>
-                    <div class="location-map-wrapper">
-                        <div id="map-livraison" class="map-container"></div>
-                        <input type="hidden" name="latitude" id="latitude">
-                        <input type="hidden" name="longitude" id="longitude">
-                        <input type="text" name="lieu_livraison" id="lieu_livraison" class="form-control mt-2" placeholder="Adresse ou nom du lieu" required>
+                    <label class="form-label">Réservation</label>
+                    <div class="p-3" style="background: #f8f9fa; border-radius: 6px;">
+                        <strong>#{{ reservation.id }}</strong> — {{ reservation.client.get_full_name }}<br>
+                        <small class="text-muted">Véhicule: {{ reservation.vehicule }} — {{ reservation.date_debut|date:'d/m/Y' }} → {{ reservation.date_fin|date:'d/m/Y' }}</small>
                     </div>
-                    <div class="selected-location" id="selected-livraison" style="display: none;">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <div>
-                            <strong>Position sélectionnée</strong>
-                            <div class="coords-display" id="coords-livraison"></div>
-                        </div>
+                    <input type="hidden" name="reservation" value="{{ reservation.id }}">
+                </div>
+                {% else %}
+                <div class="mb-3">
+                    <label class="form-label">Réservation</label>
+                    <select name="reservation" class="form-select" required>
+                        {% for r in reservations %}
+                        <option value="{{ r.id }}">#{{ r.id }} - {{ r.client }} - {{ r.vehicule }} ({{ r.date_debut|date:'d/m/Y' }} → {{ r.date_fin|date:'d/m/Y' }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+
+                <div class="mb-3">
+                    <label class="form-label">Livreur</label>
+                    <select name="livreur" class="form-select" required>
+                        <option value="">— Choisir un livreur —</option>
+                        {% for l in livreurs %}
+                        <option value="{{ l.id }}" {% if livraison and livraison.livreur and l.id == livraison.livreur.id %}selected{% elif not livraison and livreurs|length == 1 and forloop.first %}selected{% endif %}>{{ l.get_full_name|default:l.username }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if livreurs|length == 0 %}
+                    <div class="mt-2 alert alert-warning">
+                        Aucun livreur disponible. Veuillez créer un utilisateur avec le rôle « Livreur » dans <a href="{% url 'accounts:user_list' %}">la liste des utilisateurs</a>.
                     </div>
+                    {% endif %}
                 </div>
 
-                <button type="submit" class="btn btn-success">Enregistrer</button>
+                {# Date, heure and lieu removed per strict request - only reservation info, livreur and submit remain #}
+
+                <div class="d-flex justify-content-end">
+                    <a href="{% url 'reservations:livraison_list' %}" class="btn btn-outline-secondary me-2">Annuler</a>
+                    <button type="submit" class="btn btn-primary">Assigner le livreur</button>
+                </div>
             </form>
         </div>
     </div>
 </div>
 
-<script>
-// Initialize map centered on Morocco
-const moroccoCenter = [31.7917, -7.0926];
-const zoomLevel = 6;
-
-const mapLivraison = L.map('map-livraison').setView(moroccoCenter, zoomLevel);
-L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-    attribution: '© OpenStreetMap contributors'
-}).addTo(mapLivraison);
-let markerLivraison = null;
-
-mapLivraison.on('click', function(e) {
-    const { lat, lng } = e.latlng;
-    if (markerLivraison) mapLivraison.removeLayer(markerLivraison);
-    markerLivraison = L.marker(e.latlng).addTo(mapLivraison);
-    document.getElementById('latitude').value = lat.toFixed(6);
-    document.getElementById('longitude').value = lng.toFixed(6);
-    document.getElementById('coords-livraison').textContent = `Lat: ${lat.toFixed(6)}, Lng: ${lng.toFixed(6)}`;
-    document.getElementById('selected-livraison').style.display = 'flex';
-});
-
-// Form validation
-document.querySelector('form').addEventListener('submit', function(e) {
-    const lat = document.getElementById('latitude').value;
-    const lng = document.getElementById('longitude').value;
-
-    if (!lat || !lng) {
-        e.preventDefault();
-        alert('Veuillez sélectionner le lieu de livraison sur la carte.');
-    }
-});
-</script>
 {% endblock %}

@@ -147,8 +147,8 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         </td>
                         <td class="text-white-50">{{ user.date_inscription|date:"d/m/Y" }}</td>
                         <td>
-                            <a href="#" class="btn btn-sm btn-outline-light rounded-pill">
-                                <i class="fas fa-edit me-1"></i>Modifier
+                            <a href="{% url 'accounts:user_edit' user.id %}" class="btn btn-sm btn-outline-warning rounded-pill">
+                                <i class="fas fa-edit me-1"></i>Modifier rôle
                             </a>
                         </td>
                     </tr>

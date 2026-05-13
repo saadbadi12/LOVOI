@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import (Reservation, Slot, Contrat, Livraison, Paiement,
                      Facture, Avis,EtatDesLieux)
+from .models import DemandeProlongation
 
 
 @admin.register(Slot)
@@ -40,7 +41,8 @@ class PaiementAdmin(admin.ModelAdmin):
 
 @admin.register(Facture)
 class FactureAdmin(admin.ModelAdmin):
-    list_display = ('id', 'reservation', 'date_facture', 'montant_ht', 'tva', 'montant_ttc')
+    list_display = ('id', 'reservation', 'type', 'date_facture', 'montant_ht', 'tva', 'montant_ttc')
+    list_filter = ('type', 'date_facture')
     raw_id_fields = ('reservation',)
 
 
@@ -56,3 +58,10 @@ class EtatDesLieuxAdmin(admin.ModelAdmin):
     list_display = ('id', 'reservation', 'type', 'date', 'employe', 'kilometrage')
     list_filter = ('type',)
     raw_id_fields = ('reservation', 'employe')
+
+
+@admin.register(DemandeProlongation)
+class DemandeProlongationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'reservation', 'nouvelle_date_fin', 'statut', 'created_at')
+    list_filter = ('statut', 'created_at')
+    raw_id_fields = ('reservation',)

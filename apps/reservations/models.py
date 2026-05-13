@@ -1,9 +1,9 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator, MaxValueValidator
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import date, timedelta
-from django.utils import timezone
 
 
 class Slot(models.Model):
@@ -36,6 +36,10 @@ class Reservation(models.Model):
         ('TERMINEE', _('Terminée')),
         ('ANNULEE', _('Annulée')),
     ]
+    DELIVERY_CHOICES = [
+        ('RETRAIT_AGENCE', _("Retrait a l'agence")),
+        ('LIVRAISON_DOMICILE', _('Livraison a domicile')),
+    ]
 
     client = models.ForeignKey('accounts.Utilisateur', on_delete=models.CASCADE,
                               related_name='reservations', limit_choices_to={'role': 'CLIENT'})
@@ -52,12 +56,18 @@ class Reservation(models.Model):
     longitude_depart = models.DecimalField(_('Longitude départ'), max_digits=9, decimal_places=6, null=True, blank=True)
     latitude_retour = models.DecimalField(_('Latitude retour'), max_digits=9, decimal_places=6, null=True, blank=True)
     longitude_retour = models.DecimalField(_('Longitude retour'), max_digits=9, decimal_places=6, null=True, blank=True)
+    delivery_option = models.CharField(_('Option de livraison'), max_length=30, choices=DELIVERY_CHOICES, default='RETRAIT_AGENCE')
+    delivery_address = models.CharField(_('Adresse de livraison'), max_length=255, blank=True)
+    delivery_distance_km = models.DecimalField(_('Distance livraison (km)'), max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    delivery_fee = models.DecimalField(_('Frais de livraison (MAD)'), max_digits=10, decimal_places=2, default=Decimal('0.00'))
+    price_per_km = models.DecimalField(_('Tarif livraison par km (MAD)'), max_digits=6, decimal_places=2, default=Decimal('5.00'))
     statut_reservation = models.CharField(_('Statut'), max_length=20,
                                          choices=STATUT_CHOICES, default='EN_ATTENTE')
     montant_total = models.DecimalField(_('Montant total (MAD)'), max_digits=10,
                                        decimal_places=2, null=True, blank=True)
     caution_versee = models.BooleanField(_('Caution versée'), default=False)
     nombre_jours = models.IntegerField(_('Nombre de jours'), default=1)
+    reference = models.IntegerField(_('Référence client'), default=0)
 
     class Meta:
         verbose_name = _('Réservation')
@@ -65,19 +75,67 @@ class Reservation(models.Model):
         ordering = ['-date_reservation']
 
     def __str__(self):
-        return f"Réservation {self.id} - {self.client} - {self.vehicule}"
+        return f"Réservation {self.reference} - {self.client} - {self.vehicule}"
+
+    @property
+    def facture(self):
+        return self.factures.filter(type='LOCATION').order_by('date_facture').first()
+
+    def has_overlap(self):
+        if not self.vehicule_id or not self.date_debut or not self.date_fin:
+            return False
+
+        reservations = Reservation.objects.filter(
+            vehicule=self.vehicule,
+            statut_reservation__in=['EN_ATTENTE', 'CONFIRMEE', 'EN_COURS'],
+            date_debut__lt=self.date_fin,
+            date_fin__gt=self.date_debut,
+        )
+
+        if self.pk:
+            reservations = reservations.exclude(pk=self.pk)
+
+        return reservations.exists()
+
+    def clean(self):
+        super().clean()
+
+        if self.date_debut and self.date_fin:
+            if self.date_fin <= self.date_debut:
+                raise ValidationError({
+                    'date_fin': _("La date de fin doit être après la date de début.")
+                })
+
+            if self.statut_reservation in ['EN_ATTENTE', 'CONFIRMEE', 'EN_COURS'] and self.has_overlap():
+                raise ValidationError(
+                    _("Ce véhicule est déjà réservé sur cette période.")
+                )
+
+        if self.delivery_option == 'LIVRAISON_DOMICILE' and not self.delivery_address:
+            raise ValidationError({
+                'delivery_address': _("Veuillez saisir une adresse de livraison.")
+            })
 
     def calculer_total(self):
-        """Calculate total price based on duration and vehicle daily rate."""
+        from decimal import Decimal
         if self.date_debut and self.date_fin and self.vehicule:
-            delta = self.date_fin - self.date_debut
-            self.nombre_jours = max(delta.days, 1)
-            self.montant_total = Decimal(self.nombre_jours) * self.vehicule.prix_journalier
+            jours = max((self.date_fin - self.date_debut).days, 1)
+            self.nombre_jours = jours
+            location_total = Decimal(jours) * self.vehicule.prix_journalier * Decimal("1.20")
+            delivery_fee = self.delivery_fee if self.delivery_option == 'LIVRAISON_DOMICILE' else Decimal('0.00')
+            self.montant_total = (location_total + delivery_fee).quantize(Decimal("0.01"))
         return self.montant_total
 
     def save(self, *args, **kwargs):
-        if not self.montant_total:
-            self.calculer_total()
+
+        if not self.reference:
+
+            last = Reservation.objects.filter(client=self.client).order_by('-reference').first()
+            self.reference = (last.reference + 1) if last and last.reference else 1
+
+        self.calculer_total()
+        self.full_clean()
+
         super().save(*args, **kwargs)
 
     def confirmer(self):
@@ -117,13 +175,37 @@ class Reservation(models.Model):
     def prolonger(self, nouvelle_date_fin):
         """Extend rental."""
         if self.statut_reservation in ['CONFIRMEE', 'EN_COURS']:
-            old_fin = self.date_fin
+            if isinstance(nouvelle_date_fin, str):
+                nouvelle_date_fin = date.fromisoformat(nouvelle_date_fin)
             self.date_fin = nouvelle_date_fin
             self.calculer_total()
             self.save()
             return True
         return False
 
+
+class DemandeProlongation(models.Model):
+    """Client request to extend a reservation."""
+    STATUS = [
+        ('EN_ATTENTE', _('En attente')),
+        ('ACCEPTEE', _('Acceptée')),
+        ('REFUSEE', _('Refusée')),
+    ]
+
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE,
+                                    related_name='demandes_prolongation')
+    nouvelle_date_fin = models.DateField(_('Nouvelle date de fin'))
+    statut = models.CharField(_('Statut'), max_length=20, choices=STATUS, default='EN_ATTENTE')
+    motif_refus = models.TextField(_('Motif de refus'), null=True, blank=True)
+    created_at = models.DateTimeField(_('Créée le'), auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Demande de prolongation')
+        verbose_name_plural = _('Demandes de prolongation')
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"DemandeProlongation {self.id} - Réservation {self.reservation.id} - {self.get_statut_display()}"
 
 class Contrat(models.Model):
     """Rental contract PDF."""
@@ -160,14 +242,12 @@ class Livraison(models.Model):
     STATUT_CHOICES = [
         ('EN_ATTENTE', _('En attente')),
         ('EN_COURS', _('En cours')),
-        ('LIVREE', _('Livrée')),
         ('TERMINEE', _('Terminée')),
         ('ECHEC', _('Échec')),
     ]
 
     TYPE_CHOICES = [
         ('LIVRAISON', _('Livraison')),
-        ('RECUPERATION', _('Récupération')),
     ]
 
     reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE,
@@ -194,6 +274,18 @@ class Livraison(models.Model):
     def __str__(self):
         return f"Livraison {self.id} - {self.reservation}"
 
+    def trigger_refund(self):
+        """When livraison fails, automatically refund the client."""
+        if self.statut == 'ECHEC' and self.motif_echec:
+            Paiement.objects.create(
+                reservation=self.reservation,
+                type='REMBOURSEMENT',
+                amount=self.reservation.montant_total,
+                mode='CARTE_BANCAIRE',
+                statut='COMPLETE',
+                transaction_id=f'REFUND-LIVraison-{self.id}'
+            )
+
 
 class Paiement(models.Model):
     """Payment for a reservation."""
@@ -216,11 +308,12 @@ class Paiement(models.Model):
         ('TOTAL', _('Paiement total')),
         ('CAUTION', _('Caution')),
         ('REMBOURSEMENT', _('Remboursement')),
+        ('FRAIS_SUPPLEMENTAIRES', _('Frais supplémentaires')),
     ]
 
     reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE,
                                   related_name='paiements')
-    type = models.CharField(_('Type'), max_length=20, choices=TYPE_CHOICES, default='TOTAL')
+    type = models.CharField(_('Type'), max_length=30, choices=TYPE_CHOICES, default='TOTAL')
     amount = models.DecimalField(_('Montant (MAD)'), max_digits=10, decimal_places=2)
     mode = models.CharField(_('Mode de paiement'), max_length=20, choices=MODE_CHOICES)
     statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')
@@ -245,10 +338,18 @@ class Paiement(models.Model):
 
 class Facture(models.Model):
     """Invoice for a reservation."""
-    reservation = models.OneToOneField(Reservation, on_delete=models.CASCADE,
-                                      related_name='facture')
+    TYPE_CHOICES = [
+        ('LOCATION', _('Location')),
+        ('PROLONGEMENT', _('Prolongement')),
+        ('FRAIS_SUPPLEMENTAIRES', _('Frais supplémentaires')),
+    ]
+
+    reservation = models.ForeignKey(Reservation, on_delete=models.CASCADE,
+                                      related_name='factures')
     paiement = models.ForeignKey(Paiement, on_delete=models.SET_NULL, null=True,
                                 related_name='facture')
+    type = models.CharField(_('Type'), max_length=30, choices=TYPE_CHOICES, default='LOCATION')
+    description = models.CharField(_('Description'), max_length=255, blank=True)
     date_facture = models.DateTimeField(_('Date de facture'), auto_now_add=True)
     montant_ht = models.DecimalField(_('Montant HT (MAD)'), max_digits=10, decimal_places=2)
     tva = models.DecimalField(_('TVA (%)'), max_digits=5, decimal_places=2, default=20.0)
@@ -261,13 +362,29 @@ class Facture(models.Model):
         verbose_name_plural = _('Factures')
 
     def __str__(self):
+        if self.type == 'PROLONGEMENT':
+            return f"Facture de prolongement - Réservation {self.reservation.id}"
         return f"Facture {self.id} - Réservation {self.reservation.id}"
 
     def save(self, *args, **kwargs):
-        if self.reservation and self.reservation.montant_total:
-            self.montant_ht = self.reservation.montant_total
-            self.montant_tva = self.montant_ht * (self.tva / 100)
-            self.montant_ttc = self.montant_ht + self.montant_tva
+        montant_source = self.montant_ttc or (self.reservation.montant_total if self.reservation else None)
+
+        if montant_source:
+            self.montant_ttc = montant_source.quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
+            self.montant_ht = (self.montant_ttc / Decimal("1.20")).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
+            self.montant_tva = (self.montant_ttc - self.montant_ht).quantize(
+                Decimal("0.01"),
+                rounding=ROUND_HALF_UP
+            )
+
         super().save(*args, **kwargs)
 
 

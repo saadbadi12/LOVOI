@@ -2,8 +2,14 @@
 Django settings for LOVOI_2 Car Rental Agency - Full Implementation.
 """
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from pathlib import Path
 import os
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -12,6 +18,7 @@ SECRET_KEY = 'django-insecure-lovoi2-full-2024-change-in-production'
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
+SITE_ID = 1
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -64,10 +71,15 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 # SQLite Database (for development)
 # Switch to MySQL in production
+import os
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'lovoi_db',
+        'USER': 'root',
+        'PASSWORD': '',
+        'HOST': '127.0.0.1',
+        'PORT': '3306',
     }
 }
 
@@ -88,12 +100,23 @@ STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'database' / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Delivery fee calculation defaults.
+AGENCY_ADDRESS = 'Casablanca, Morocco'
+AGENCY_LATITUDE = 33.5731
+AGENCY_LONGITUDE = -7.5898
+DELIVERY_PRICE_PER_KM = '5.00'
+
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.Utilisateur'
+
+# Login URL
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 # REST Framework
 REST_FRAMEWORK = {

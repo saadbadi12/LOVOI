@@ -159,16 +159,16 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <h5 class="text-warning mb-4"><i class="fas fa-credit-card me-2"></i>Mode de paiement</h5>
 
                     <div class="row g-3 mb-4">
-                        <div class="col-6 col-md-3">
-                            <label class="payment-method w-100 text-center h-100" id="method-cb">
-                                <input type="radio" name="payment_method" value="CARTE_BANCAIRE" required>
+                        <div class="col-12 col-md-3">
+                            <label class="payment-method w-100 text-center h-100 selected" id="method-cb">
+                                <input type="radio" name="payment_method" value="CARTE_BANCAIRE" checked required>
                                 <div class="text-white">
                                     <i class="fas fa-credit-card fa-2x mb-2 text-primary"></i>
                                     <p class="mb-0 small fw-bold">Carte<br>Bancaire</p>
                                 </div>
                             </label>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-3 d-none">
                             <label class="payment-method w-100 text-center h-100" id="method-especes">
                                 <input type="radio" name="payment_method" value="ESPECES">
                                 <div class="text-white">
@@ -177,7 +177,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 </div>
                             </label>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-3 d-none">
                             <label class="payment-method w-100 text-center h-100" id="method-virement">
                                 <input type="radio" name="payment_method" value="VIREMENT">
                                 <div class="text-white">
@@ -186,7 +186,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 </div>
                             </label>
                         </div>
-                        <div class="col-6 col-md-3">
+                        <div class="col-6 col-md-3 d-none">
                             <label class="payment-method w-100 text-center h-100" id="method-paypal">
                                 <input type="radio" name="payment_method" value="PAYPAL">
                                 <div class="text-white">
@@ -199,7 +199,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 </div>
 
                 <!-- Credit Card Input Section -->
-                <div class="payment-section" id="card-section">
+                <div class="payment-section active" id="card-section">
                     <div class="glass-card p-4 mb-4">
                         <h5 class="text-warning mb-4"><i class="fas fa-lock me-2"></i>Informations de la carte</h5>
 

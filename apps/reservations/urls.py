@@ -4,13 +4,22 @@ from . import views
 app_name = 'reservations'
 
 urlpatterns = [
+    # Admin dashboard - livraisons & prolongations
+    path('admin-dashboard/livraisons/', views.livraison_list, name='admin_livraisons'),
+    path('admin-dashboard/livraisons/assigner/<int:reservation_id>/', views.livraison_create, name='assigner_livreur'),
+    path('admin-dashboard/prolongations/', views.admin_prolongations, name='admin_prolongations'),
+    path('admin-dashboard/prolongations/<int:pk>/accepter/', views.accepter_prolongation, name='accepter_prolongation'),
+    path('admin-dashboard/prolongations/<int:pk>/refuser/', views.refuser_prolongation, name='refuser_prolongation'),
     # Client
+    path('conditions-location/', views.conditions_location, name='conditions_location'),
     path('create/<int:vehicle_id>/', views.reservation_create, name='reservation_create'),
     path('contract/<int:vehicle_id>/', views.contract_sign, name='contract_sign'),
     path('contract/<int:vehicle_id>/sign/', views.contract_sign_process, name='contract_sign_process'),
     path('payment/<int:vehicle_id>/', views.reservation_payment, name='reservation_payment'),
     path('process-payment/<int:vehicle_id>/', views.process_payment, name='process_payment'),
+    path('delivery-quote/', views.delivery_quote, name='delivery_quote'),
     path('<int:pk>/', views.reservation_detail, name='reservation_detail'),
+    path('<int:pk>/prolonger/', views.demander_prolongation, name='demander_prolongation'),
     path('my/', views.my_reservations, name='my_reservations'),
     path('avis/<int:vehicle_id>/', views.avis_create, name='avis_create'),
 
@@ -21,12 +30,12 @@ urlpatterns = [
     path('<int:pk>/start/', views.reservation_start, name='reservation_start'),
     path('<int:pk>/end/', views.reservation_end, name='reservation_end'),
     path('<int:pk>/extend/', views.extend_reservation, name='extend_reservation'),
+    path('<int:pk>/extend/payment/', views.extension_payment, name='extension_payment'),
 
     # Livreur actions
     path('<int:pk>/accept/', views.livraison_accept, name='livraison_accept'),
     path('<int:pk>/picked-up/', views.livraison_picked_up, name='livraison_picked_up'),
     path('<int:pk>/delivered/', views.livraison_delivered, name='livraison_delivered'),
-    path('<int:pk>/returned/', views.livraison_returned, name='livraison_returned'),
 
     # Slots
     path('slots/', views.slot_list, name='slot_list'),

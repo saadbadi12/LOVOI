@@ -93,7 +93,7 @@
 
     <div class="glass-card-body">
         <div class="reservation-info mb-4">
-            <p><strong>Réservation #{{ reservation.id }}</strong> — Montant total: <span class="text-warning">{{ reservation.montant_total }} MAD</span></p>
+            <p><strong>Réservation {{ reservation.reference }}</strong> — Montant total: <span class="text-warning">{{ reservation.montant_total }} MAD</span></p>
         </div>
         <form method="post">
             {% csrf_token %}
@@ -110,9 +110,9 @@
                     <label>Mode de paiement</label>
                     <select name="mode" class="form-select">
                         <option value="CARTE_BANCAIRE">Carte bancaire</option>
-                        <option value="ESPECES">Espèces</option>
-                        <option value="VIREMENT">Virement</option>
-                        <option value="PAYPAL">PayPal</option>
+                        <option value="ESPECES" hidden>Espèces</option>
+                        <option value="VIREMENT" hidden>Virement</option>
+                        <option value="PAYPAL" hidden>PayPal</option>
                     </select>
                 </div>
             </div>

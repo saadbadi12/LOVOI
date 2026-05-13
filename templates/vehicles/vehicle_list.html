@@ -177,14 +177,21 @@
             <h1 class="mb-2" style="color: white;">Notre Parc Auto</h1>
             <p class="text-muted mb-0">Decouvrez notre collection de vehicules premium</p>
         </div>
-        <span class="badge badge-teal px-3 py-2">
-            <i class="fas fa-car me-2"></i>{{ page_obj.paginator.count }} vehicules
-        </span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge badge-teal px-3 py-2">
+                <i class="fas fa-car me-2"></i>{{ page_obj.paginator.count }} vehicules
+            </span>
+            {% if user.is_authenticated and user.is_admin %}
+            <a href="{% url 'vehicles:vehicle_create' %}" class="btn btn-glass-teal" title="Ajouter un véhicule">
+                <i class="fas fa-plus"></i>
+            </a>
+            {% endif %}
+        </div>
     </div>
 
-    <form method="get" class="glass-card p-4 mb-5">
+    <form method="get" action="{% url 'vehicles:vehicle_list' %}" class="glass-card p-4 mb-5">
         <div class="row g-3">
-            <div class="col-md-3">
+            <div class="col-md-2">
                 <input type="text" name="search" class="form-control form-control-glass" placeholder="Rechercher un vehicule..." value="{{ filters.search }}">
             </div>
             <div class="col-md-2">
@@ -215,9 +222,14 @@
                 <input type="number" name="prix_max" class="form-control form-control-glass" placeholder="Prix max (MAD)" value="{{ filters.prix_max }}">
             </div>
             <div class="col-md-1">
-                <button type="submit" class="btn btn-glass w-100 h-100">
+                <button type="submit" class="btn btn-glass w-100 h-100" title="Filtrer">
                     <i class="fas fa-filter"></i>
                 </button>
+            </div>
+            <div class="col-md-1">
+                <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-glass-teal w-100 h-100 d-flex align-items-center justify-content-center" title="Réinitialiser">
+                    <i class="fas fa-undo"></i>
+                </a>
             </div>
         </div>
     </form>
@@ -295,12 +307,12 @@
         <ul class="pagination justify-content-center">
             {% if page_obj.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page=1">
                     <i class="fas fa-angle-double-left"></i>
                 </a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.previous_page_number }}">
                     <i class="fas fa-angle-left"></i>
                 </a>
             </li>
@@ -310,12 +322,12 @@
             </li>
             {% if page_obj.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.next_page_number }}">
                     <i class="fas fa-angle-right"></i>
                 </a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">
+                <a class="page-link" href="?{% if query_string %}{{ query_string }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
                     <i class="fas fa-angle-double-right"></i>
                 </a>
             </li>

@@ -98,6 +98,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     <div class="glass-card p-4 p-md-5">
         <form method="post">
             {% csrf_token %}
+            <input type="hidden" name="technicien" value="{{ request.user.id }}" />
 
             <div class="row g-4">
                 <div class="col-md-6">

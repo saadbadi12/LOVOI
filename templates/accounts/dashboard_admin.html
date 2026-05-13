@@ -185,7 +185,143 @@ body {
         </div>
     </div>
 
-    <!-- Map & Reservations -->
+    <!-- Analytics Reporting Section -->
+    <div class="glass-card p-4 mb-4">
+        <h4 class="text-white fw-bold mb-4">
+            <i class="fas fa-chart-bar me-2 text-warning"></i>Reporting Analytique
+        </h4>
+
+        <!-- Top Stats Row -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-primary mb-1">{{ taux_occupation }}%</h3>
+                    <small class="text-white-50">Taux Occupation</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-success mb-1">{{ total_revenue }} MAD</h3>
+                    <small class="text-white-50">Chiffre d'affaires</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-warning mb-1">{{ maintenance_cost }} MAD</h3>
+                    <small class="text-white-50">Coûts Maintenance</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-info mb-1">{{ total_reservations }}</h3>
+                    <small class="text-white-50">Réservations</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-danger mb-1">{{ vehicules_loues_count }}</h3>
+                    <small class="text-white-50">Véhicules Loués</small>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="text-center p-3" style="background:rgba(255,255,255,0.05); border-radius:15px;">
+                    <h3 class="text-secondary mb-1">{{ clients_fideles_count }}</h3>
+                    <small class="text-white-50">Clients Fidèles</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row g-3">
+            <!-- Occupation Rate Gauge -->
+            <div class="col-md-4">
+                <div class="p-3" style="background:rgba(255,255,255,0.03); border-radius:15px;">
+                    <h6 class="text-white mb-3"><i class="fas fa-tachometer-alt me-2"></i>Taux d'Occupation</h6>
+                    <canvas id="occupationChart" height="120"></canvas>
+                </div>
+            </div>
+            <!-- Revenue Evolution -->
+            <div class="col-md-4">
+                <div class="p-3" style="background:rgba(255,255,255,0.03); border-radius:15px;">
+                    <h6 class="text-white mb-3"><i class="fas fa-chart-line me-2"></i>Chiffre d'affaires</h6>
+                    <canvas id="revenueChart" height="120"></canvas>
+                </div>
+            </div>
+            <!-- Maintenance Costs -->
+            <div class="col-md-4">
+                <div class="p-3" style="background:rgba(255,255,255,0.03); border-radius:15px;">
+                    <h6 class="text-white mb-3"><i class="fas fa-wrench me-2"></i>Coûts Maintenance</h6>
+                    <canvas id="maintenanceChart" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tables Row -->
+        <div class="row g-3 mt-2">
+            <!-- Top Vehicles -->
+            <div class="col-md-6">
+                <div class="p-3" style="background:rgba(255,255,255,0.03); border-radius:15px;">
+                    <h6 class="text-warning mb-3"><i class="fas fa-car me-2"></i>Véhicules les Plus Demandés</h6>
+                    <table class="table table-dark table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Véhicule</th>
+                                <th>Locations</th>
+                                <th>Taux</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in vehicules_loues %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ v.name }}</td>
+                                <td class="text-info">{{ v.count }}x</td>
+                                <td>
+                                    <div class="progress" style="height:6px;">
+                                        <div class="progress-bar bg-info" style="width:{{ v.rate }}%"></div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-white-50">Aucune donnée</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <!-- Top Clients -->
+            <div class="col-md-6">
+                <div class="p-3" style="background:rgba(255,255,255,0.03); border-radius:15px;">
+                    <h6 class="text-warning mb-3"><i class="fas fa-users me-2"></i>Clients les Plus Fidèles</h6>
+                    <table class="table table-dark table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Client</th>
+                                <th>Réservations</th>
+                                <th>Montant</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for c in top_clients %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ c.name }}</td>
+                                <td class="text-warning">{{ c.count }}x</td>
+                                <td class="text-success">{{ c.total|default:0 }} MAD</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="4" class="text-center text-white-50">Aucune donnée</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map & Quick Actions -->
     <div class="row g-4">
         <!-- Map -->
         <div class="col-lg-8">
@@ -267,7 +403,7 @@ body {
                         <tbody>
                             {% for res in recent_reservations %}
                             <tr>
-                                <td><span class="badge bg-secondary">#{{ res.id }}</span></td>
+                                <td><span class="badge bg-secondary">{{ res.reference }}</span></td>
                                 <td>{{ res.client.get_full_name }}</td>
                                 <td>{{ res.vehicule.marque }} {{ res.vehicule.modele }}</td>
                                 <td>{{ res.date_debut|date:"d/m" }} - {{ res.date_fin|date:"d/m/y" }}</td>
@@ -301,51 +437,130 @@ body {
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
-const map = L.map('admin-map').setView([31.7917, -7.0926], 6);
+Chart.defaults.color = '#fff';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
+
+// Revenue Chart (Line)
+new Chart(document.getElementById('revenueChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for m in monthly_reservations %}'{{ m.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            data: [{% for r in monthly_revenue %}{{ r }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            borderColor: '#38ef7d',
+            backgroundColor: 'rgba(56, 239, 125, 0.2)',
+            fill: true,
+            tension: 0.4,
+            pointRadius: 2,
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// Occupation Gauge (Doughnut)
+new Chart(document.getElementById('occupationChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Occupé', 'Libre'],
+        datasets: [{
+            data: [{{ taux_occupation }}, {{ disponibles }}],
+            backgroundColor: ['rgba(255, 107, 107, 0.8)', 'rgba(56, 239, 125, 0.8)'],
+            borderWidth: 0,
+        }]
+    },
+    options: {
+        responsive: true,
+        cutout: '70%',
+        plugins: { legend: { position: 'bottom', labels: { boxWidth: 10 } } }
+    }
+});
+
+// Maintenance Cost Chart (Bar)
+new Chart(document.getElementById('maintenanceChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for m in monthly_reservations %}'{{ m.month }}'{% if not forloop.last %}, {% endif %}{% endfor %}],
+        datasets: [{
+            label: 'Coûts',
+            data: [{% for c in maintenance_costs %}{{ c }}{% if not forloop.last %}, {% endif %}{% endfor %}],
+            backgroundColor: 'rgba(255, 193, 7, 0.6)',
+            borderRadius: 4,
+        }]
+    },
+    options: { responsive: true, plugins: { legend: { display: false } } }
+});
+
+// Map Script
+const map = L.map('admin-map', {
+    center: [31.7917, -7.0926],
+    zoom: 6,
+    minZoom: 5,
+    maxZoom: 16,
+    zoomControl: true,
+    scrollWheelZoom: true,
+    preferCanvas: true
+});
 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
     attribution: '© OpenStreetMap contributors',
     className: 'dark-map-tiles'
 }).addTo(map);
 
+// Lock map to Morocco
+map.setMaxBounds([[20.0, -17.5], [37.0, -0.5]]);
+map.on('moveend', function(e) {
+    var bounds = map.getBounds();
+    var moroccoBounds = [[20.0, -17.5], [37.0, -0.5]];
+    if (!bounds.intersects(moroccoBounds)) {
+        map.setView([31.7917, -7.0926], 6);
+    }
+});
+
 // Reservation departure markers
 const departureMarkers = [];
 {% for res in recent_reservations %}
 {% if res.latitude_depart and res.longitude_depart %}
-L.marker([{{ res.latitude_depart }}, {{ res.longitude_depart }}], {
+L.marker([{{ res.latitude_depart|stringformat:'f' }}, {{ res.longitude_depart|stringformat:'f' }}], {
     icon: L.divIcon({
         className: 'custom-marker',
-        html: '<div style="background:#0d6efd;width:14px;height:14px;border-radius:50%;border:2px solid #fff;"></div>'
+        html: '<div style="background:#0d6efd;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
     })
 })
     .addTo(map)
-    .bindPopup(`
-        <div style="color:#333;">
-            <strong>Départ #{{ res.id }}</strong><br>
-            {{ res.client }}<br>
-            {{ res.lieu_depart }}<br>
-            <small>{{ res.vehicule }}</small>
-        </div>
-    `);
-departureMarkers.push([{{ res.latitude_depart }}, {{ res.longitude_depart }}]);
+    .bindPopup("<div style='color:#333;'><strong>Depart #{{ res.id }}</strong><br>{{ res.lieu_depart|escape }}</div>");
+departureMarkers.push([{{ res.latitude_depart|stringformat:'f' }}, {{ res.longitude_depart|stringformat:'f' }}]);
 {% endif %}
 {% if res.latitude_retour and res.longitude_retour %}
-L.marker([{{ res.latitude_retour }}, {{ res.longitude_retour }}], {
+L.marker([{{ res.latitude_retour|stringformat:'f' }}, {{ res.longitude_retour|stringformat:'f' }}], {
     icon: L.divIcon({
         className: 'custom-marker',
-        html: '<div style="background:#198754;width:14px;height:14px;border-radius:50%;border:2px solid #fff;"></div>'
+        html: '<div style="background:#198754;width:20px;height:20px;border-radius:50%;border:3px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
     })
 })
     .addTo(map)
-    .bindPopup(`
-        <div style="color:#333;">
-            <strong>Retour #{{ res.id }}</strong><br>
-            {{ res.client }}<br>
-            {{ res.lieu_retour }}<br>
-            <small>{{ res.vehicule }}</small>
-        </div>
-    `);
-departureMarkers.push([{{ res.latitude_retour }}, {{ res.longitude_retour }}]);
+    .bindPopup("<div style='color:#333;'><strong>Retour #{{ res.id }}</strong><br>{{ res.lieu_retour|escape }}</div>");
+departureMarkers.push([{{ res.latitude_retour|stringformat:'f' }}, {{ res.longitude_retour|stringformat:'f' }}]);
+{% endif %}
+{% endfor %}
+
+{% for liv in recent_livraisons %}
+{% if liv.latitude and liv.longitude %}
+L.marker([{{ liv.latitude|stringformat:'f' }}, {{ liv.longitude|stringformat:'f' }}], {
+    icon: L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#ffc107;width:20px;height:20px;border-radius:50%;border:3px solid #333;box-shadow:0 2px 5px rgba(0,0,0,0.5);"></div>',
+        iconSize: [20, 20],
+        iconAnchor: [10, 10]
+    })
+})
+    .addTo(map)
+    .bindPopup("<div style='color:#333;'><strong>Livraison #{{ liv.id }}</strong><br>{{ liv.lieu_livraison|escape }}</div>");
+departureMarkers.push([{{ liv.latitude|stringformat:'f' }}, {{ liv.longitude|stringformat:'f' }}]);
 {% endif %}
 {% endfor %}
 

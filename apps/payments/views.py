@@ -19,7 +19,7 @@ def payment_page(request, reservation_id):
     reservation = Reservation.objects.get(pk=reservation_id)
 
     if request.method == 'POST':
-        payment_method = request.POST.get('payment_method')
+        payment_method = 'CARTE_BANCAIRE'
         amount = request.POST.get('amount')
 
         # In production, integrate with Stripe/PayPal

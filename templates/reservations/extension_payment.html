@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block title %}Paiement prolongement - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+        color: #fff;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .summary-row:last-child {
+        border-bottom: 0;
+    }
+    .btn-pay-extension {
+        background: linear-gradient(135deg, #ff6b6b, #ee5a5a);
+        border: 0;
+        color: #fff;
+        border-radius: 14px;
+        padding: 14px 24px;
+        font-weight: 700;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="glass-card p-4 p-md-5">
+                <h1 class="h3 mb-4">Paiement du prolongement</h1>
+
+                <div class="mb-4">
+                    <div class="summary-row">
+                        <span class="text-white-50">Réservation</span>
+                        <strong>#{{ reservation.reference }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Véhicule</span>
+                        <strong>{{ reservation.vehicule }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Ancienne date de fin</span>
+                        <strong>{{ ancienne_date_fin }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Nouvelle date de fin</span>
+                        <strong>{{ nouvelle_date_fin }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Jours supplémentaires</span>
+                        <strong>{{ jours_supplementaires }}</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Supplement HT</span>
+                        <strong>{{ supplement_ht }} MAD</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">TVA (20%)</span>
+                        <strong>{{ supplement_tva }} MAD</strong>
+                    </div>
+                    <div class="summary-row">
+                        <span class="text-white-50">Supplément à payer</span>
+                        <strong class="text-warning">{{ supplement }} MAD</strong>
+                        <small class="text-white-50">TVA incluse</small>
+                    </div>
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-pay-extension w-100">
+                        Payer le supplément
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

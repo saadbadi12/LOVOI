@@ -134,6 +134,22 @@ body {
     padding: 15px;
     vertical-align: middle;
 }
+
+.cancel-delivery-modal {
+    z-index: 2000 !important;
+    pointer-events: auto;
+}
+
+.cancel-delivery-modal .modal-dialog,
+.cancel-delivery-modal .modal-content {
+    position: relative;
+    z-index: 2010 !important;
+    pointer-events: auto;
+}
+
+.modal-backdrop {
+    z-index: 1990 !important;
+}
 </style>
 {% endblock %}
 
@@ -233,7 +249,10 @@ body {
                                     </span>
                                     {% endif %}
                                 </td>
-                                <td>{{ l.reservation.client.get_full_name }}</td>
+                                <td>
+                                    {{ l.reservation.client.get_full_name|default:l.reservation.client.username }}
+                                    <div class="text-white-50" style="font-size:0.85rem;">{{ l.reservation.client.telephone|default:"Non renseigné" }}</div>
+                                </td>
                                 <td>{{ l.date_livraison|date:"d/m/Y" }}</td>
                                 <td>{{ l.heure_livraison }}</td>
                                 <td>{{ l.lieu_livraison|truncatechars:25 }}</td>
@@ -242,25 +261,32 @@ body {
                                         {{ l.get_statut_display }}
                                     </span>
                                 </td>
-                                <td>
-                                    {% if l.statut == 'EN_ATTENTE' %}
-                                    <a href="{% url 'reservations:livraison_accept' l.pk %}" class="btn btn-sm btn-success">
-                                        <i class="fas fa-check"></i> Accepter
-                                    </a>
-                                    {% elif l.statut == 'EN_COURS' and l.type == 'LIVRAISON' %}
-                                    <a href="{% url 'reservations:livraison_delivered' l.pk %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-check-double"></i> Livrer
-                                    </a>
-                                    {% elif l.statut == 'EN_COURS' and l.type == 'RECUPERATION' %}
-                                    <a href="{% url 'reservations:livraison_returned' l.pk %}" class="btn btn-sm btn-primary">
-                                        <i class="fas fa-undo"></i> Retour
-                                    </a>
-                                    {% else %}
-                                    <a href="{% url 'reservations:reservation_detail' l.reservation.pk %}" class="btn btn-sm btn-outline-light">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    {% endif %}
-                                </td>
+                                                                <td>
+                                                                        {% if l.statut == 'EN_ATTENTE' %}
+                                                                        <form method="post" action="{% url 'reservations:livraison_accept' l.pk %}" style="display:inline-block;">
+                                                                                {% csrf_token %}
+                                                                                <button type="submit" class="btn btn-sm btn-success">
+                                                                                        <i class="fas fa-truck-loading"></i> Marquer En cours de livraison
+                                                                                </button>
+                                                                        </form>
+
+                                                                        <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#cancelModal{{ l.pk }}">
+                                                                                <i class="fas fa-times"></i> Annuler
+                                                                        </button>
+
+                                                                        {% elif l.statut == 'EN_COURS' %}
+                                                                        <form method="post" action="{% url 'reservations:livraison_delivered' l.pk %}" style="display:inline-block;">
+                                                                                {% csrf_token %}
+                                                                                <button type="submit" class="btn btn-sm btn-primary">
+                                                                                        <i class="fas fa-check-double"></i> Marquer Livrée
+                                                                                </button>
+                                                                        </form>
+                                                                        {% else %}
+                                                                        <a href="{% url 'reservations:reservation_detail' l.reservation.pk %}" class="btn btn-sm btn-outline-light">
+                                                                                <i class="fas fa-eye"></i>
+                                                                        </a>
+                                                                        {% endif %}
+                                                                </td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -308,6 +334,33 @@ body {
         </div>
     </div>
 </div>
+
+{% for l in livraisons %}
+{% if l.statut == 'EN_ATTENTE' %}
+<div class="modal fade cancel-delivery-modal" id="cancelModal{{ l.pk }}" tabindex="-1" aria-labelledby="cancelModalLabel{{ l.pk }}" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form method="post" action="{% url 'reservations:livraison_update' l.pk %}" class="modal-content">
+            {% csrf_token %}
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel{{ l.pk }}">Annuler la livraison #{{ l.pk }}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="cancelReason{{ l.pk }}" class="form-label">Motif d'annulation</label>
+                    <textarea id="cancelReason{{ l.pk }}" name="motif_annulation" class="form-control" rows="3" required></textarea>
+                    <input type="hidden" name="demande_annulation" value="1">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="submit" class="btn btn-danger">Confirmer annulation</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
 {% endblock %}
 
 {% block extra_js %}
@@ -320,27 +373,60 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
 const markers = [];
 {% for l in livraisons %}
 {% if l.latitude and l.longitude %}
-const marker{{ forloop.counter }} = L.marker([{{ l.latitude }}, {{ l.longitude }}], {
+const marker{{ forloop.counter }} = L.marker([{{ l.latitude|stringformat:'f' }}, {{ l.longitude|stringformat:'f' }}], {
     icon: L.divIcon({
         className: 'custom-marker',
-        html: '<div style="background:{{ l.type == "LIVRAISON"|yesno:"#4ecdc4,#9c27b0" }};width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>'
+        html: '<div style="background:#4ecdc4;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 5px rgba(0,0,0,0.3);"></div>'
     })
 }).addTo(map);
 
-marker{{ forloop.counter }}.bindPopup(`
-    <div style="color:#333;min-width:150px;">
-        <strong>{{ l.reservation.client }}</strong><br>
-        <span style="font-size:0.85rem;color:#666;">{{ l.lieu_livraison }}</span><br>
-        <hr style="margin:5px 0;">
-        <small><strong>#{{ l.reservation.id }}</strong> - {{ l.get_type_display }}</small>
-    </div>
-`);
-markers.push([{{ l.latitude }}, {{ l.longitude }}]);
+marker{{ forloop.counter }}.bindPopup("<div style='color:#333;'><strong>{{ l.reservation.client|escape }}</strong><br>{{ l.lieu_livraison|escape }}</div>");
+markers.push([{{ l.latitude|stringformat:'f' }}, {{ l.longitude|stringformat:'f' }}]);
 {% endif %}
 {% endfor %}
 
 if (markers.length > 0) {
     map.fitBounds(markers, { padding: [50, 50] });
 }
+
+document.querySelectorAll('.cancel-delivery-modal').forEach((modal) => {
+    const textarea = modal.querySelector('textarea[name="motif_annulation"]');
+    const form = modal.querySelector('form');
+
+    modal.addEventListener('show.bs.modal', () => {
+        document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove());
+    });
+
+    modal.addEventListener('shown.bs.modal', () => {
+        if (textarea) {
+            textarea.disabled = false;
+            textarea.readOnly = false;
+            setTimeout(() => textarea.focus(), 50);
+        }
+    });
+
+    modal.addEventListener('hidden.bs.modal', () => {
+        document.querySelectorAll('.modal-backdrop').forEach((backdrop) => backdrop.remove());
+        document.body.classList.remove('modal-open');
+        document.body.style.removeProperty('overflow');
+        document.body.style.removeProperty('padding-right');
+    });
+
+    if (form && textarea) {
+        form.addEventListener('submit', (event) => {
+            const reason = textarea.value.trim();
+
+            if (!reason) {
+                event.preventDefault();
+                textarea.value = '';
+                textarea.focus();
+                textarea.classList.add('is-invalid');
+                return;
+            }
+
+            textarea.value = reason;
+        });
+    }
+});
 </script>
 {% endblock %}

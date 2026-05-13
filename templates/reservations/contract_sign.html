@@ -265,6 +265,15 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <p class="text-white-50 mb-1">Lieu de retour</p>
                         <p class="text-white fw-bold">{{ lieu_retour }}</p>
                     </div>
+                    <div class="col-md-12">
+                        <p class="text-white-50 mb-1">Mode de retrait</p>
+                        {% if delivery_option == 'LIVRAISON_DOMICILE' %}
+                            <p class="text-white fw-bold mb-1">Livraison a domicile: {{ delivery_address }}</p>
+                            <p class="text-warning small mb-0">{{ delivery_distance_km }} km - {{ delivery_fee }} MAD</p>
+                        {% else %}
+                            <p class="text-white fw-bold mb-0">Retrait a l'agence</p>
+                        {% endif %}
+                    </div>
                 </div>
                 <hr style="border-color: rgba(255,255,255,0.1);">
                 <div class="text-center">
@@ -274,6 +283,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 </div>
             </div>
 
+            {% comment %}
             <!-- Contract Terms -->
             <div class="glass-card p-4 mb-4">
                 <h5 class="text-warning mb-3"><i class="fas fa-file-contract me-2"></i>Conditions de Location</h5>
@@ -289,6 +299,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 </div>
             </div>
 
+            {% endcomment %}
             <!-- Signature Section -->
             <form method="post" id="contract-form" action="{% url 'reservations:contract_sign_process' vehicule.id %}">
                 {% csrf_token %}
@@ -312,6 +323,12 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <label class="form-check-label text-white-50" for="accept-terms">
                             J'accepte les conditions de location
                         </label>
+                        <p class="text-white-50 small mt-2 mb-0">
+                            Vous pouvez lire les conditions completes ici:
+                            <a href="{% url 'reservations:conditions_location' %}" target="_blank" class="text-warning">
+                                Conditions de location
+                            </a>
+                        </p>
                     </div>
                 </div>
 
