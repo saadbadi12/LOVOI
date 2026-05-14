@@ -227,119 +227,114 @@ def reservation_payment(request, vehicle_id):
 
 @login_required
 def process_payment(request, vehicle_id):
-    """Process payment and create reservation."""
+    """Create reservation in EN_ATTENTE status, then redirect to Stripe Checkout."""
+    import stripe
+    from django.conf import settings
+
     vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
 
     if 'reservation_data' not in request.session:
         messages.error(request, 'Session expirée. Veuillez recommencer.')
         return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
 
-    if request.method == 'POST':
-        signature_name = (request.POST.get('signature_name') or request.session.get('signature_name') or '').strip()
-        if not signature_name:
-            messages.error(request, 'Veuillez signer le contrat avant de proceder au paiement.')
-            return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+    if 'contract_signed' not in request.session:
+        return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
 
-        request.session['contract_signed'] = True
-        request.session['signature_name'] = signature_name
+    data = request.session['reservation_data']
+    signature_name = request.session.get('signature_name', '').strip()
 
-        data = request.session['reservation_data']
-        payment_method = 'CARTE_BANCAIRE'
+    from datetime import date
+    from decimal import Decimal
 
-        from datetime import date
-        from decimal import Decimal as D
+    date_debut = date.fromisoformat(data['date_debut'])
+    date_fin = date.fromisoformat(data['date_fin'])
+    nombre_jours = max((date_fin - date_debut).days, 1)
 
-        def _parse_decimal(val):
-            if not val or val in ('', 'None', 'null', 'undefined'):
-                return None
-            try:
-                return D(str(val).strip())
-            except:
-                return None
+    montant_ht = Decimal(nombre_jours) * vehicule.prix_journalier
+    delivery_fee = Decimal(data.get('delivery_fee') or '0.00')
+    montant_total = (montant_ht * Decimal("1.20") + delivery_fee).quantize(Decimal("0.01"))
 
-        reservation = Reservation(
-            client=request.user,
-            vehicule=vehicule,
-            date_debut=date.fromisoformat(data['date_debut']),
-            date_fin=date.fromisoformat(data['date_fin']),
-            lieu_depart=data['lieu_depart'],
-            lieu_retour=data['lieu_retour'],
-            latitude_depart=_parse_decimal(data.get('latitude_depart')),
-            longitude_depart=_parse_decimal(data.get('longitude_depart')),
-            latitude_retour=_parse_decimal(data.get('latitude_retour')),
-            longitude_retour=_parse_decimal(data.get('longitude_retour')),
-            delivery_option=data.get('delivery_option', 'RETRAIT_AGENCE'),
-            delivery_address=data.get('delivery_address', ''),
-            delivery_distance_km=_parse_decimal(data.get('delivery_distance_km')) or D('0.00'),
-            delivery_fee=_parse_decimal(data.get('delivery_fee')) or D('0.00'),
-            price_per_km=_parse_decimal(data.get('price_per_km')) or D('5.00'),
-            statut_reservation='CONFIRMEE',
-        )
-
+    def _parse_decimal(val):
+        if not val or str(val) in ('', 'None', 'null', 'undefined'):
+            return None
         try:
-            with transaction.atomic():
-                reservation.full_clean()
-                reservation.save()
+            return Decimal(str(val).strip())
+        except:
+            return None
 
-                vehicule.statut = 'INDISPONIBLE'
-                vehicule.save(update_fields=['statut'])
-        except ValidationError as exc:
-            for message in exc.messages:
-                messages.error(request, message)
-            return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
+    # Create reservation in EN_ATTENTE status (will be confirmed after webhook)
+    reservation = Reservation(
+        client=request.user,
+        vehicule=vehicule,
+        date_debut=date_debut,
+        date_fin=date_fin,
+        lieu_depart=data['lieu_depart'],
+        lieu_retour=data['lieu_retour'],
+        latitude_depart=_parse_decimal(data.get('latitude_depart')),
+        longitude_depart=_parse_decimal(data.get('longitude_depart')),
+        latitude_retour=_parse_decimal(data.get('latitude_retour')),
+        longitude_retour=_parse_decimal(data.get('longitude_retour')),
+        delivery_option=data.get('delivery_option', 'RETRAIT_AGENCE'),
+        delivery_address=data.get('delivery_address', ''),
+        delivery_distance_km=_parse_decimal(data.get('delivery_distance_km')) or Decimal('0.00'),
+        delivery_fee=_parse_decimal(data.get('delivery_fee')) or Decimal('0.00'),
+        price_per_km=_parse_decimal(data.get('price_per_km')) or Decimal('5.00'),
+        statut_reservation='EN_ATTENTE',
+    )
 
-        # Create payment record
-        Paiement.objects.create(
-            reservation=reservation,
-            type='ACOMPTE',
-            amount=reservation.montant_total,
-            mode=payment_method,
-            statut='COMPLETE'
-        )
+    try:
+        with transaction.atomic():
+            reservation.full_clean()
+            reservation.save()
+    except ValidationError as exc:
+        for message in exc.messages:
+            messages.error(request, message)
+        return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
 
-        # Create contract with signature
-        Contrat.objects.create(
-            reservation=reservation,
-            statut_signature='SIGNE',
-            signature_client=request.session.get('signature_name', '')
-        )
+    # Create contract with signature
+    Contrat.objects.create(
+        reservation=reservation,
+        statut_signature='SIGNE',
+        signature_client=signature_name,
+    )
 
-        # Create invoice
-        Facture.objects.create(
-            reservation=reservation,
-            paiement=Paiement.objects.filter(reservation=reservation).first(),
-            type='LOCATION',
-            description=f'Facture de location - Réservation #{reservation.id}',
-            montant_ht=Decimal('0.00'),
-            montant_ttc=reservation.montant_total
-        )
+    # Create Stripe Checkout Session
+    checkout_session = stripe.checkout.Session.create(
+        payment_method_types=['card'],
+        line_items=[{
+            'price_data': {
+                'currency': 'mad',
+                'unit_amount': int(float(montant_total) * 100),
+                'product_data': {
+                    'name': f'Réservation #{reservation.id} - {vehicule.marque} {vehicule.modele}',
+                    'description': f'Location du {date_debut} au {date_fin} - {nombre_jours} jour(s)',
+                },
+            },
+            'quantity': 1,
+        }],
+        mode='payment',
+        success_url=request.build_absolute_uri(f'/payments/success/?reservation_id={reservation.id}'),
+        cancel_url=request.build_absolute_uri(f'/payments/cancel/?reservation_id={reservation.id}'),
+        metadata={
+            'reservation_id': reservation.id,
+            'user_id': request.user.id,
+        }
+    )
 
-        # Livraison will be assigned by admin from the dashboard (no auto-assign here)
+    # Create payment record in EN_ATTENTE
+    Paiement.objects.create(
+        reservation=reservation,
+        type='TOTAL',
+        amount=montant_total,
+        mode='CARTE_BANCAIRE',
+        statut='EN_ATTENTE',
+        stripe_payment_intent_id=checkout_session.payment_intent,
+    )
 
-        # Notify admin
-        admins = Utilisateur.objects.filter(role='ADMIN')
-        for admin in admins:
-            Notification.objects.create(
-                utilisateur=admin,
-                type='RESERVATION',
-                titre='Nouvelle Réservation Confirmée',
-                message=f'Réservation #{reservation.id} - {request.user} a réservé {vehicule.marque} {vehicule.modele}. Montant: {reservation.montant_total} MAD.'
-            )
+    # Store pending reservation data for cleanup if needed
+    request.session['pending_reservation_id'] = reservation.id
 
-        # (No automatic notification to a livreur since assignment is manual)
-
-        # Clear session
-        if 'reservation_data' in request.session:
-            del request.session['reservation_data']
-        if 'contract_signed' in request.session:
-            del request.session['contract_signed']
-        if 'signature_name' in request.session:
-            del request.session['signature_name']
-
-        messages.success(request, 'Réservation confirmée! Merci pour votre confiance.')
-        return redirect('reservations:reservation_detail', pk=reservation.id)
-
-    return redirect('reservations:reservation_payment', vehicle_id=vehicle_id)
+    return redirect(checkout_session.url, code=303)
 
 
 @login_required

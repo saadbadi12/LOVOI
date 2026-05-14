@@ -146,13 +146,8 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 <p class="text-warning mt-2">+ {{ vehicule.caution }} MAD caution (restituée)</p>
             </div>
 
-            <form method="post" action="{% url 'reservations:process_payment' vehicule.id %}">
+            <form method="post" id="payment-form">
                 {% csrf_token %}
-
-                <input type="hidden" name="date_debut" value="{{ date_debut }}">
-                <input type="hidden" name="date_fin" value="{{ date_fin }}">
-                <input type="hidden" name="lieu_depart" value="{{ lieu_depart }}">
-                <input type="hidden" name="lieu_retour" value="{{ lieu_retour }}">
 
                 <!-- Payment Methods -->
                 <div class="glass-card p-4 mb-4">
@@ -360,9 +355,10 @@ document.getElementById('card-number').addEventListener('input', function(e) {
 
 // Validate card before submit
 document.querySelector('form').addEventListener('submit', function(e) {
+    e.preventDefault(); // Prevent default form submission
+
     const method = document.querySelector('input[name="payment_method"]:checked');
     if (!method) {
-        e.preventDefault();
         alert('Veuillez sélectionner un mode de paiement');
         return;
     }
@@ -374,11 +370,42 @@ document.querySelector('form').addEventListener('submit', function(e) {
         const cardCvv = document.getElementById('card-cvv').value;
 
         if (cardNumber.length < 16 || !cardName || !cardExpiry || !cardCvv) {
-            e.preventDefault();
             alert('Veuillez remplir tous les champs de la carte');
             return;
         }
     }
+
+    // For CARTE_BANCAIRE, redirect to Stripe via payments app
+    if (method.value === 'CARTE_BANCAIRE') {
+        // First create the reservation and get the reservation ID
+        fetch('{% url 'reservations:process_payment' vehicule.id %}', {
+            method: 'POST',
+            body: new FormData(this),
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}',
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (response.redirected) {
+                // If the view redirects, follow it to get the reservation ID from URL
+                // The process_payment creates reservation and redirects to reservation_detail
+                // We need to get the reservation ID another way
+                window.location.href = response.url;
+            } else {
+                return response.json();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fallback: submit the form normally
+            this.submit();
+        });
+        return;
+    }
+
+    // For other payment methods, submit normally
+    this.submit();
 });
 </script>
 {% endblock %}

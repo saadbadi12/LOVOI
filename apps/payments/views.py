@@ -31,8 +31,8 @@ def payment_page(request, reservation_id):
                 'quantity': 1,
             }],
             mode='payment',
-            success_url=request.build_absolute_uri('/payments/success/'),
-            cancel_url=request.build_absolute_uri('/payments/cancel/'),
+            success_url=request.build_absolute_uri(f'/payments/success/?reservation_id={reservation.id}'),
+            cancel_url=request.build_absolute_uri(f'/payments/cancel/?reservation_id={reservation.id}'),
             metadata={
                 'reservation_id': reservation.id,
                 'user_id': request.user.id,
@@ -62,7 +62,20 @@ def payment_page(request, reservation_id):
 
 @login_required
 def payment_success(request):
-    """Payment successful page."""
+    """Payment successful page - redirect to reservation detail."""
+    reservation_id = request.GET.get('reservation_id')
+    if reservation_id:
+        # Clear session data
+        if 'pending_reservation_id' in request.session:
+            del request.session['pending_reservation_id']
+        if 'reservation_data' in request.session:
+            del request.session['reservation_data']
+        if 'contract_signed' in request.session:
+            del request.session['contract_signed']
+        if 'signature_name' in request.session:
+            del request.session['signature_name']
+
+        return redirect('reservations:reservation_detail', pk=reservation_id)
     return render(request, 'payments/success.html')
 
 
@@ -94,18 +107,31 @@ def stripe_webhook(request):
     if event['type'] == 'checkout.session.completed':
         session = event['data']['object']
         payment_intent_id = session.get('payment_intent')
+        metadata = session.get('metadata', {})
+        reservation_id = metadata.get('reservation_id')
 
-        from apps.reservations.models import Paiement
-        paiement = Paiement.objects.filter(
-            stripe_payment_intent_id=payment_intent_id
-        ).first()
+        from apps.reservations.models import Paiement, Reservation
+        if reservation_id:
+            paiement = Paiement.objects.filter(
+                stripe_payment_intent_id=payment_intent_id,
+                reservation_id=reservation_id
+            ).first()
+        else:
+            paiement = Paiement.objects.filter(
+                stripe_payment_intent_id=payment_intent_id
+            ).first()
 
-        if paiement:
+        if paiement and paiement.statut != 'COMPLETE':
             paiement.statut = 'COMPLETE'
             paiement.stripe_charge_id = payment_intent_id
             paiement.save()
 
             reservation = paiement.reservation
             reservation.confirmer()
+
+            # Mark vehicle as unavailable
+            vehicule = reservation.vehicule
+            vehicule.statut = 'INDISPONIBLE'
+            vehicule.save(update_fields=['statut'])
 
     return HttpResponse(status=200)
