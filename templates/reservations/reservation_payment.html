@@ -146,7 +146,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 <p class="text-warning mt-2">+ {{ vehicule.caution }} MAD caution (restituée)</p>
             </div>
 
-            <form method="post" id="payment-form">
+            <form method="post" id="payment-form" action="{% url 'reservations:process_payment' vehicule.id %}">
                 {% csrf_token %}
 
                 <!-- Payment Methods -->
