@@ -55,6 +55,9 @@ urlpatterns = [
     # Partial Cancel
     path('<int:pk>/partial-cancel/', views.partial_cancel, name='partial_cancel'),
 
+    # Livreur probleme signal
+    path('<int:pk>/signaler-probleme/', views.signaler_probleme, name='signaler_probleme'),
+
     # PDF Export
     path('contract/<int:reservation_id>/pdf/', views.contract_pdf, name='contract_pdf'),
     path('facture/<int:reservation_id>/pdf/', views.facture_pdf, name='facture_pdf'),

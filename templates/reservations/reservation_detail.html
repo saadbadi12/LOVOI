@@ -253,10 +253,14 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     {% endif %}
                 {% endif %}
 
-                {% if reservation.statut_reservation in 'EN_ATTENTE,CONFIRMEE' %}
+                {% if reservation.statut_reservation in 'EN_ATTENTE' %}
                     <a href="{% url 'reservations:reservation_cancel' reservation.pk %}" class="action-btn btn-cancel w-100 mb-2">
                         <i class="fas fa-times"></i> Annuler
                     </a>
+                {% endif %}
+
+                {% if reservation.statut_reservation == 'EN_COURS' %}
+                    <p class="text-white-50 small mb-2"><i class="fas fa-info-circle me-1"></i>Pour retour anticipé, utilisez "Terminer" après l'état des lieux de retour.</p>
                 {% endif %}
 
                 {% comment %} Admin block retained - client prolongation moved to client actions {% endcomment %}
@@ -316,6 +320,9 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <a href="{% url 'reservations:livraison_delivered' livraison.pk %}" class="action-btn btn-deliver w-100">
                             <i class="fas fa-check-double"></i> Confirmer Livraison
                         </a>
+                        <button type="button" class="action-btn btn-cancel w-100 mt-2" onclick="showProblemeModal()">
+                            <i class="fas fa-exclamation-triangle"></i> Signaler un problème
+                        </button>
                     {% endif %}
                 </div>
                 {% empty %}
@@ -427,6 +434,15 @@ function showPartialCancelModal() {
 function closePartialCancelModal() {
     document.getElementById('partialCancelModal').classList.remove('active');
 }
+
+// Probleme Modal
+function showProblemeModal() {
+    document.getElementById('problemeModal').classList.add('active');
+}
+
+function closeProblemeModal() {
+    document.getElementById('problemeModal').classList.remove('active');
+}
 </script>
 
 <!-- Partial Cancellation Modal -->
@@ -452,6 +468,29 @@ function closePartialCancelModal() {
                     <i class="fas fa-check me-2"></i>Confirmer l'annulation partielle
                 </button>
                 <button type="button" class="btn btn-outline-light" onclick="closePartialCancelModal()">Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Probleme Modal for Livreur -->
+<div class="modal-payment" id="problemeModal">
+    <div class="payment-modal-content">
+        <div class="text-center mb-4">
+            <h3 class="text-white fw-bold"><i class="fas fa-exclamation-triangle me-2 text-danger"></i>Signaler un Problème</h3>
+            <p class="text-white-50 small">Votre signalement sera envoyé à l'administrateur pour décision.</p>
+        </div>
+        <form method="post" action="{% url 'reservations:signaler_probleme' reservation.pk %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="text-white-50 mb-2">Motif du signalement</label>
+                <textarea name="motif" class="card-input w-100" rows="4" placeholder="Décrivez le problème..." required></textarea>
+            </div>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn-pay mb-2">
+                    <i class="fas fa-paper-plane me-2"></i>Envoyer le signalement
+                </button>
+                <button type="button" class="btn btn-outline-light" onclick="closeProblemeModal()">Annuler</button>
             </div>
         </form>
     </div>

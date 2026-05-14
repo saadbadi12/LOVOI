@@ -1077,6 +1077,39 @@ def partial_cancel(request, pk):
 
 
 @login_required
+@user_passes_test(lambda u: u.is_livreur())
+def signaler_probleme(request, pk):
+    """Livreur reports a problem with a delivery - notification to admin only."""
+    reservation = get_object_or_404(Reservation, pk=pk)
+
+    # Verify livreur is assigned to this reservation
+    if not reservation.livraisons.filter(livreur=request.user).exists():
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    if request.method == 'POST':
+        motif = request.POST.get('motif', '').strip()
+        if not motif:
+            messages.error(request, 'Motif requis.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+        # Create notification for admin
+        admins = Utilisateur.objects.filter(role='ADMIN')
+        for admin in admins:
+            Notification.objects.create(
+                utilisateur=admin,
+                type='LIVRAISON',
+                titre='Signalement de Problème - Livraison',
+                message=f'Le livreur {request.user} signale un problème pour la réservation #{reservation.id}: {motif}'
+            )
+
+        messages.success(request, 'Signalement envoyé à l\'administration. Vous serez contacté.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    return redirect('reservations:reservation_detail', pk=reservation.id)
+
+
+@login_required
 @user_passes_test(lambda u: u.is_admin() or u.is_client())
 def paiement_create(request, reservation_id):
     reservation = get_object_or_404(Reservation, pk=reservation_id)
