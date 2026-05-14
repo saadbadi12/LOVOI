@@ -296,13 +296,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <p class="text-white-50">En attente de confirmation par l'administrateur.</p>
                 {% elif reservation.statut_reservation == 'CONFIRMEE' %}
                     <p class="text-success"><i class="fas fa-check-circle me-2"></i>Réservation confirmée!</p>
-                    {% with paiement=reservation.paiements.filter(statut='COMPLETE').first %}
-                        {% if paiement %}
-                            <a href="{% url 'reservations:paiement_demander_remboursement' paiement.pk %}" class="action-btn btn-cancel w-100 mt-2">
+                    {% for p in reservation.paiements.all %}
+                        {% if p.statut == 'COMPLETE' %}
+                            <a href="{% url 'reservations:paiement_demander_remboursement' p.pk %}" class="action-btn btn-cancel w-100 mt-2">
                                 <i class="fas fa-undo"></i> Annuler ma réservation
                             </a>
                         {% endif %}
-                    {% endwith %}
+                    {% endfor %}
                 {% elif reservation.statut_reservation == 'EN_COURS' %}
                     <p class="text-primary"><i class="fas fa-car me-2"></i>Véhicule en cours de location</p>
                     {% if reservation.vehicule.statut != 'DISPONIBLE' %}
