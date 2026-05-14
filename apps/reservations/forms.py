@@ -43,15 +43,21 @@ class ReservationForm(forms.ModelForm):
 
     def clean_lieu_depart(self):
         value = self.cleaned_data.get("lieu_depart")
-        if not value or value.strip() == "" or value == "À définir":
-            raise forms.ValidationError("Veuillez saisir une adresse de départ.")
-        return value
+        delivery_option = self.cleaned_data.get('delivery_option')
+        # Only require if LIVRAISON_DOMICILE
+        if delivery_option == 'LIVRAISON_DOMICILE':
+            if not value or value.strip() == "" or value == "À définir":
+                raise forms.ValidationError("Veuillez saisir une adresse de départ.")
+        return value or 'Agence LOVOI'
 
     def clean_lieu_retour(self):
         value = self.cleaned_data.get("lieu_retour")
-        if not value or value.strip() == "" or value == "À définir":
-            raise forms.ValidationError("Veuillez saisir une adresse de retour.")
-        return value
+        delivery_option = self.cleaned_data.get('delivery_option')
+        # Only require if LIVRAISON_DOMICILE
+        if delivery_option == 'LIVRAISON_DOMICILE':
+            if not value or value.strip() == "" or value == "À définir":
+                raise forms.ValidationError("Veuillez saisir une adresse de retour.")
+        return value or 'Agence LOVOI'
 
 
 class SlotForm(forms.ModelForm):
