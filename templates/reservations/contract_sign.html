@@ -311,7 +311,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <input type="text" name="signature_name" id="signature-name"
                                placeholder="Écrivez votre nom complet pour signer"
                                required maxlength="100">
-                        <p class="text-white-50 small mt-2 mb-0">Date: {{ date_debut }}</p>
+                        <p class="text-white-50 small mt-2 mb-0">Date: {{ signature_date|date:"Y-m-d" }}</p>
                     </div>
 
                     <div class="form-check mt-4 text-start">
@@ -321,7 +321,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         </label>
                         <p class="text-white-50 small mt-2 mb-0">
                             Vous pouvez lire les conditions completes ici:
-                            <a href="{% url 'reservations:conditions_location' %}" target="_blank" class="text-warning">
+                            <a href="{% url 'reservations:conditions_location' %}?next={{ request.get_full_path|urlencode }}" class="text-warning">
                                 Conditions de location
                             </a>
                         </p>
@@ -423,13 +423,28 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 </div>
 
 <script>
-// Enable proceed button when terms accepted
-document.getElementById('accept-terms').addEventListener('change', function() {
-    document.getElementById('proceed-btn').disabled = !this.checked;
-});
+const signatureInput = document.getElementById('signature-name');
+const acceptTerms = document.getElementById('accept-terms');
+const proceedBtn = document.getElementById('proceed-btn');
+
+function updateProceedState() {
+    proceedBtn.disabled = !(signatureInput.value.trim() && acceptTerms.checked);
+}
+
+signatureInput.addEventListener('input', updateProceedState);
+acceptTerms.addEventListener('change', updateProceedState);
+updateProceedState();
 
 // Payment Modal Functions
 function openPaymentModal() {
+    if (!signatureInput.value.trim()) {
+        signatureInput.reportValidity();
+        return;
+    }
+    if (!acceptTerms.checked) {
+        acceptTerms.reportValidity();
+        return;
+    }
     document.getElementById('paymentModal').classList.add('active');
 }
 
@@ -462,6 +477,13 @@ function updateModalExpiry(value) {
 }
 
 function processPayment() {
+    if (!signatureInput.value.trim() || !acceptTerms.checked) {
+        closePaymentModal();
+        updateProceedState();
+        document.getElementById('contract-form').reportValidity();
+        return;
+    }
+
     const cardNumber = document.getElementById('modal-card-number').value.replace(/\s/g, '');
     const cardName = document.getElementById('modal-card-name').value;
     const cardExpiry = document.getElementById('modal-card-expiry').value;

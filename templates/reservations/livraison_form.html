@@ -17,6 +17,13 @@
                         <strong>#{{ reservation.id }}</strong> — {{ reservation.client.get_full_name }}<br>
                         <small class="text-muted">Véhicule: {{ reservation.vehicule }} — {{ reservation.date_debut|date:'d/m/Y' }} → {{ reservation.date_fin|date:'d/m/Y' }}</small>
                     </div>
+                    <div class="mt-2">
+                        {% if reservation.delivery_option == 'LIVRAISON_DOMICILE' %}
+                            <span class="badge bg-primary">Livraison a domicile</span>
+                        {% else %}
+                            <span class="badge bg-success">Retrait agence</span>
+                        {% endif %}
+                    </div>
                     <input type="hidden" name="reservation" value="{{ reservation.id }}">
                 </div>
                 {% else %}

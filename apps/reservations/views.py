@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.core.exceptions import ValidationError
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
@@ -25,7 +26,17 @@ import sys
 
 def conditions_location(request):
     """Simple public rental conditions page."""
-    return render(request, 'reservations/conditions_location.html')
+    return_url = request.GET.get('next')
+    if not return_url:
+        reservation_data = request.session.get('reservation_data') or {}
+        vehicle_id = reservation_data.get('vehicule_id')
+        if vehicle_id:
+            return_url = reverse('reservations:contract_sign', args=[vehicle_id])
+
+    if not return_url:
+        return_url = reverse('vehicles:vehicle_list')
+
+    return render(request, 'reservations/conditions_location.html', {'return_url': return_url})
 
 
 @login_required
@@ -143,6 +154,7 @@ def contract_sign(request, vehicle_id):
         'delivery_fee': delivery_fee,
         'nombre_jours': nombre_jours,
         'montant_total': montant_total,
+        'signature_date': timezone.localdate(),
     }
     return render(request, 'reservations/contract_sign.html', context)
 
@@ -222,11 +234,15 @@ def process_payment(request, vehicle_id):
         messages.error(request, 'Session expirée. Veuillez recommencer.')
         return redirect('reservations:reservation_create', vehicle_id=vehicle_id)
 
-    if 'contract_signed' not in request.session:
-        # Set it now since user is coming from payment modal
-        request.session['contract_signed'] = True
-
     if request.method == 'POST':
+        signature_name = (request.POST.get('signature_name') or request.session.get('signature_name') or '').strip()
+        if not signature_name:
+            messages.error(request, 'Veuillez signer le contrat avant de proceder au paiement.')
+            return redirect('reservations:contract_sign', vehicle_id=vehicle_id)
+
+        request.session['contract_signed'] = True
+        request.session['signature_name'] = signature_name
+
         data = request.session['reservation_data']
         payment_method = 'CARTE_BANCAIRE'
 
@@ -334,14 +350,30 @@ def reservation_detail(request, pk):
         request.user.is_livreur()
         and reservation.livraisons.filter(livreur=request.user).exists()
     )
-    # Only client who made it, admin, or assigned livreur can view
-    if reservation.client != request.user and not request.user.is_admin() and not is_assigned_livreur:
+    # Only client who made it, admin, employee, or assigned livreur can view
+    if reservation.client != request.user and not request.user.is_admin() and not request.user.is_employe() and not is_assigned_livreur:
         messages.error(request, 'Accès non autorisé.')
         if request.user.is_livreur():
             return redirect('accounts:dashboard_livreur')
         return redirect('accounts:dashboard_client')
+    has_avis = False
+    if request.user.is_authenticated:
+        has_avis = Avis.objects.filter(client=request.user, vehicule=reservation.vehicule).exists()
+    has_etat_depart = reservation.etats_des_lieux.filter(type='SORTIE').exists()
+
+    today = timezone.localdate()
+    tomorrow = today + timedelta(days=1)
+    prolongation_min_date = reservation.date_fin + timedelta(days=1)
+
     return render(request, 'reservations/reservation_detail.html',
-                  {'reservation': reservation, 'today': timezone.localdate()})
+                  {
+                      'reservation': reservation,
+                      'today': today,
+                      'tomorrow': tomorrow,
+                      'prolongation_min_date': prolongation_min_date,
+                      'has_avis': has_avis,
+                      'has_etat_depart': has_etat_depart,
+                  })
 
 
 @login_required
@@ -358,6 +390,11 @@ def my_reservations(request):
 def avis_create(request, vehicle_id):
     """Leave a review for a vehicle."""
     vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
+
+    existing_avis = Avis.objects.filter(client=request.user, vehicule=vehicule).first()
+    if existing_avis:
+        messages.info(request, "Vous avez dÃ©jÃ  publiÃ© un avis pour ce vÃ©hicule.")
+        return redirect('vehicles:vehicle_detail', pk=vehicule.id)
 
     # Check if client has completed a rental for this vehicle
     has_rental = Reservation.objects.filter(
@@ -388,16 +425,42 @@ def avis_create(request, vehicle_id):
 @user_passes_test(lambda u: u.is_admin())
 def reservation_list(request):
     """List all reservations (admin)."""
-    reservations = Reservation.objects.all().order_by('-date_reservation')
+    etat_depart_exists = EtatDesLieux.objects.filter(
+        reservation=OuterRef('pk'),
+        type='SORTIE',
+    )
+    reservations = Reservation.objects.annotate(
+        has_etat_depart=Exists(etat_depart_exists),
+    ).order_by('-date_reservation')
 
     statut = request.GET.get('statut')
     if statut:
         reservations = reservations.filter(statut_reservation=statut)
 
+    reference = request.GET.get('reference', '').strip()
+    if reference:
+        if reference.isdigit():
+            reference_number = int(reference)
+            reservations = reservations.filter(id=reference_number)
+        else:
+            reservations = reservations.none()
+
+    client = request.GET.get('client', '').strip()
+    if client:
+        reservations = reservations.filter(
+            Q(client__username__icontains=client)
+            | Q(client__first_name__icontains=client)
+            | Q(client__last_name__icontains=client)
+            | Q(client__email__icontains=client)
+        )
+
     paginator = Paginator(reservations, 20)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'reservations/reservation_list_admin.html', {'page_obj': page_obj})
+    return render(request, 'reservations/reservation_list_admin.html', {
+        'page_obj': page_obj,
+        'today': timezone.localdate(),
+    })
 
 
 @login_required
@@ -429,6 +492,19 @@ def reservation_cancel(request, pk):
 def reservation_start(request, pk):
     """Start a rental (EN_COURS)."""
     reservation = get_object_or_404(Reservation, pk=pk)
+    if reservation.delivery_option != 'RETRAIT_AGENCE':
+        messages.error(request, 'Seul le livreur peut demarrer une reservation en livraison a domicile.')
+        return redirect('reservations:reservation_detail', pk=pk)
+
+    today = timezone.localdate()
+    if reservation.date_debut != today:
+        messages.error(request, 'La location peut etre demarree uniquement a la date de depart.')
+        return redirect('reservations:reservation_detail', pk=pk)
+
+    if not reservation.etats_des_lieux.filter(type='SORTIE').exists():
+        messages.error(request, "L'etat des lieux de depart doit etre enregistre avant de demarrer.")
+        return redirect('reservations:reservation_detail', pk=pk)
+
     if reservation.demarrer():
         messages.success(request, 'Location démarrée!')
     else:
@@ -619,6 +695,9 @@ def livraison_accept(request, pk):
     """Livreur accepts a delivery."""
     livraison = get_object_or_404(Livraison, pk=pk)
     if livraison.livreur == request.user or request.user.is_admin():
+        if livraison.reservation.delivery_option != 'LIVRAISON_DOMICILE':
+            messages.error(request, "Cette reservation est en retrait agence. Aucun livreur ne peut la traiter.")
+            return redirect('reservations:livraison_list')
         livraison.statut = 'EN_COURS'
         livraison.save()
         messages.success(request, 'Livraison acceptÃ©e!')
@@ -632,6 +711,9 @@ def livraison_picked_up(request, pk):
     """Mark vehicle as picked up."""
     livraison = get_object_or_404(Livraison, pk=pk)
     if livraison.livreur == request.user or request.user.is_admin():
+        if livraison.reservation.delivery_option != 'LIVRAISON_DOMICILE':
+            messages.error(request, "Cette reservation est en retrait agence. Aucun livreur ne peut la traiter.")
+            return redirect('reservations:livraison_list')
         livraison.statut = 'EN_COURS'
         livraison.kilometrage_depart = request.POST.get('kilometrage')
         livraison.save()
@@ -645,10 +727,22 @@ def livraison_delivered(request, pk):
     """Mark vehicle as delivered."""
     livraison = get_object_or_404(Livraison, pk=pk)
     if livraison.livreur == request.user or request.user.is_admin():
+        reservation = livraison.reservation
+        if reservation.delivery_option != 'LIVRAISON_DOMICILE':
+            messages.error(request, "Cette reservation est en retrait agence. Aucun livreur ne peut la traiter.")
+            return redirect('reservations:livraison_list')
+
+        if reservation.date_debut != timezone.localdate():
+            messages.error(request, 'La livraison peut etre finalisee uniquement a la date de depart.')
+            return redirect('reservations:livraison_list')
+
+        if not reservation.etats_des_lieux.filter(type='SORTIE').exists():
+            messages.error(request, "L'etat des lieux de depart doit etre enregistre avant la livraison au client.")
+            return redirect('reservations:livraison_list')
+
         livraison.statut = 'TERMINEE'
         livraison.save()
-        if livraison.reservation.statut_reservation == 'CONFIRMEE':
-            reservation = livraison.reservation
+        if reservation.statut_reservation == 'CONFIRMEE':
             reservation.demarrer()
         messages.success(request, 'Livraison terminée!')
     return redirect('reservations:livraison_list')
@@ -683,6 +777,8 @@ def slot_create(request):
 def livraison_list(request):
     livraisons = Livraison.objects.select_related(
         'reservation', 'reservation__client', 'livreur'
+    ).filter(
+        reservation__delivery_option='LIVRAISON_DOMICILE'
     )
     if request.user.is_livreur():
         livraisons = livraisons.filter(livreur=request.user)
@@ -701,13 +797,15 @@ def livraison_create(request, reservation_id=None):
         # Livreur sees only reservations assigned to them via existing livraisons
         reservations = Reservation.objects.filter(
             statut_reservation__in=['CONFIRMEE', 'EN_COURS'],
+            delivery_option='LIVRAISON_DOMICILE',
             livraisons__livreur=request.user
         ).select_related('client', 'vehicule').distinct()
         livreurs = Utilisateur.objects.filter(id=request.user.id)
     else:
         # Admin sees all
         reservations = Reservation.objects.filter(
-            statut_reservation__in=['CONFIRMEE', 'EN_COURS']
+            statut_reservation__in=['CONFIRMEE', 'EN_COURS'],
+            delivery_option='LIVRAISON_DOMICILE',
         ).select_related('client', 'vehicule')
         livreurs = Utilisateur.objects.filter(role=Utilisateur.ROLE_LIVREUR)
 
@@ -727,8 +825,16 @@ def livraison_create(request, reservation_id=None):
             messages.error(request, 'Réservation ou livreur invalide.')
             return redirect('reservations:livraison_list')
 
+        if reservation_obj.delivery_option != 'LIVRAISON_DOMICILE':
+            messages.error(request, "Cette reservation est en retrait agence. Aucun livreur ne peut etre assigne.")
+            return redirect('reservations:reservation_detail', pk=reservation_obj.id)
+
         if reservation_obj.date_debut != timezone.localdate():
             messages.error(request, "Le livreur peut être assigné uniquement le jour du départ.")
+            return redirect('reservations:reservation_detail', pk=reservation_obj.id)
+
+        if not reservation_obj.etats_des_lieux.filter(type='SORTIE').exists():
+            messages.error(request, "Impossible d'assigner un livreur: l'employe n'a pas encore saisi l'etat de depart.")
             return redirect('reservations:reservation_detail', pk=reservation_obj.id)
 
         # Prevent duplicate livraison for the same reservation
@@ -926,6 +1032,29 @@ def etat_des_lieux_create(request, reservation_id):
     default_type = request.GET.get('type')
     if default_type not in ['SORTIE', 'ENTREE']:
         default_type = 'ENTREE' if reservation.statut_reservation == 'EN_COURS' else 'SORTIE'
+
+    today = timezone.localdate()
+    tomorrow = today + timedelta(days=1)
+
+    if request.user.is_employe():
+        depart_allowed = (
+            default_type == 'SORTIE'
+            and reservation.statut_reservation == 'CONFIRMEE'
+            and reservation.date_debut in [today, tomorrow]
+        )
+        retour_allowed = (
+            default_type == 'ENTREE'
+            and reservation.statut_reservation == 'EN_COURS'
+            and reservation.date_fin == today
+        )
+        if not (depart_allowed or retour_allowed):
+            messages.error(request, "Cette action n'est pas disponible pour cette reservation aujourd'hui.")
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    if reservation.etats_des_lieux.filter(type=default_type).exists():
+        messages.error(request, 'Cet etat des lieux existe deja pour cette reservation.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
     if request.method == 'POST':
         form = EtatDesLieuxForm(request.POST, request.FILES)
         if form.is_valid():
@@ -939,10 +1068,7 @@ def etat_des_lieux_create(request, reservation_id):
                 vehicule.kilometrage = etat.kilometrage
 
             if etat.type == 'SORTIE':
-                if reservation.delivery_option == 'RETRAIT_AGENCE' and reservation.statut_reservation == 'CONFIRMEE':
-                    reservation.demarrer()
-                    vehicule.refresh_from_db()
-                elif reservation.delivery_option == 'LIVRAISON_DOMICILE' and reservation.statut_reservation == 'CONFIRMEE':
+                if reservation.delivery_option == 'LIVRAISON_DOMICILE' and reservation.statut_reservation == 'CONFIRMEE':
                     vehicule.statut = 'EN_LIVRAISON'
                     vehicule.save(update_fields=['statut', 'kilometrage'])
                 else:
@@ -1117,7 +1243,8 @@ def facture_pdf(request, reservation_id):
     story.append(Spacer(1, 20))
 
     if reservation.facture:
-        story.append(Paragraph(f"<b>N° Facture:</b> {reservation.facture.id}", styles['Normal']))
+        story.append(Paragraph(f"<b>N° Facture:</b> FAC-{reservation.id}", styles['Normal']))
+        story.append(Paragraph(f"<b>Reservation N:</b> {reservation.id}", styles['Normal']))
         story.append(Paragraph(f"<b>Date:</b> {reservation.facture.date_facture.strftime('%d/%m/%Y')}", styles['Normal']))
     story.append(Spacer(1, 15))
 

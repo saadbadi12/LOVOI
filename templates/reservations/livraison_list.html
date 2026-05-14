@@ -108,7 +108,9 @@
 {% block content %}
 <div class="container mt-4 pb-5">
     <h1 class="page-title mb-4">Livraisons</h1>
+    {% if user.is_admin %}
     <a href="{% url 'reservations:livraison_create' %}" class="btn btn-glass-primary mb-4">+ Planifier Livraison</a>
+    {% endif %}
 
     <div class="map-card mb-4">
         <div class="map-card-header">
@@ -130,7 +132,6 @@
                     <th>Date</th>
                     <th>Statut</th>
                     <th>Lieu</th>
-                    <th>Coordonnées</th>
                 </tr>
             </thead>
             <tbody>
@@ -147,10 +148,9 @@
                         </span>
                     </td>
                     <td>{{ l.lieu_livraison|truncatechars:20 }}</td>
-                    <td class="text-white-50">{% if l.latitude and l.longitude %}<small>{{ l.latitude|floatformat:4 }}, {{ l.longitude|floatformat:4 }}</small>{% else %}-{% endif %}</td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-white-50 py-4">Aucune livraison.</td></tr>
+                <tr><td colspan="7" class="text-center text-white-50 py-4">Aucune livraison.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Avg, Q
 from django.http import HttpResponse
 from datetime import date
 from decimal import Decimal, InvalidOperation
@@ -108,7 +108,16 @@ def vehicle_list(request):
 def vehicle_detail(request, pk):
     """Vehicle detail page."""
     vehicule = get_object_or_404(Vehicule, pk=pk)
-    return render(request, 'vehicles/vehicle_detail.html', {'vehicule': vehicule})
+    avis = vehicule.avis.select_related('client').all()
+    avis_stats = avis.aggregate(note_moyenne=Avg('note'))
+    note_moyenne = avis_stats['note_moyenne']
+    context = {
+        'vehicule': vehicule,
+        'avis_list': avis,
+        'avis_count': avis.count(),
+        'note_moyenne': round(note_moyenne, 1) if note_moyenne else None,
+    }
+    return render(request, 'vehicles/vehicle_detail.html', context)
 
 
 # ==================== ADMIN / STAFF VIEWS ====================

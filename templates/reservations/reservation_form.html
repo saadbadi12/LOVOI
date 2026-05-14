@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load l10n %}
 
 {% block extra_css %}
 <style>
@@ -106,10 +107,10 @@
                         <input type="hidden" name="vehicule" value="{{ vehicule.id }}">
                         <input type="hidden" name="lieu_depart" id="lieu_depart" value="{{ agency_address }}">
                         <input type="hidden" name="lieu_retour" id="lieu_retour" value="{{ agency_address }}">
-                        <input type="hidden" name="latitude_depart" id="latitude_depart" value="{{ agency_latitude }}">
-                        <input type="hidden" name="longitude_depart" id="longitude_depart" value="{{ agency_longitude }}">
-                        <input type="hidden" name="latitude_retour" id="latitude_retour" value="{{ agency_latitude }}">
-                        <input type="hidden" name="longitude_retour" id="longitude_retour" value="{{ agency_longitude }}">
+                        <input type="hidden" name="latitude_depart" id="latitude_depart" value="{{ agency_latitude|unlocalize }}">
+                        <input type="hidden" name="longitude_depart" id="longitude_depart" value="{{ agency_longitude|unlocalize }}">
+                        <input type="hidden" name="latitude_retour" id="latitude_retour" value="{{ agency_latitude|unlocalize }}">
+                        <input type="hidden" name="longitude_retour" id="longitude_retour" value="{{ agency_longitude|unlocalize }}">
 
                         <!-- Dates -->
                         <div class="row mb-4">
@@ -201,8 +202,8 @@ const pinkIcon = L.divIcon({
 const moroccoCenter = [31.7917, -7.0926];
 const zoomLevel = 6;
 const agencyAddress = "{{ agency_address|escapejs }}";
-const agencyLatitude = "{{ agency_latitude|stringformat:'f' }}";
-const agencyLongitude = "{{ agency_longitude|stringformat:'f' }}";
+const agencyLatitude = "{{ agency_latitude|unlocalize }}";
+const agencyLongitude = "{{ agency_longitude|unlocalize }}";
 
 const mapDelivery = L.map('map-delivery').setView([agencyLatitude, agencyLongitude], 12);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

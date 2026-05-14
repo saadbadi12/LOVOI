@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Réservation {{ reservation.reference }} - LOVOI{% endblock %}
+{% block title %}Réservation {{ reservation.id }} - LOVOI{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -67,7 +67,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     <!-- Header -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
-            <h1 class="text-white fw-bold mb-1">Réservation {{ reservation.reference }}</h1>
+            <h1 class="text-white fw-bold mb-1">Réservation {{ reservation.id }}</h1>
             <p class="text-white-50 mb-0">Créée le {{ reservation.date_reservation|date:"d/m/Y à H:i" }}</p>
         </div>
         <div>
@@ -107,6 +107,14 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <div class="col-md-6">
                         <p class="text-white-50 mb-1">Date de fin</p>
                         <p class="text-white fw-bold fs-5">{{ reservation.date_fin }}</p>
+                    </div>
+                    <div class="col-md-12">
+                        <p class="text-white-50 mb-1">Mode de retrait</p>
+                        {% if reservation.delivery_option == 'LIVRAISON_DOMICILE' %}
+                            <p class="text-warning fw-bold fs-5 mb-3"><i class="fas fa-truck me-2"></i>Livraison a domicile</p>
+                        {% else %}
+                            <p class="text-success fw-bold fs-5 mb-3"><i class="fas fa-building me-2"></i>Agence</p>
+                        {% endif %}
                     </div>
                     <div class="col-md-6">
                         <p class="text-white-50 mb-1">Lieu de départ</p>
@@ -233,9 +241,15 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 
                 {% if reservation.statut_reservation == 'CONFIRMEE' %}
                     {% if reservation.delivery_option == 'LIVRAISON_DOMICILE' and reservation.date_debut == today %}
-                        <a href="{% url 'reservations:assigner_livreur' reservation.pk %}" class="action-btn btn-deliver w-100 mb-2">
-                            <i class="fas fa-truck"></i> Planifier Livraison
-                        </a>
+                        {% if has_etat_depart %}
+                            <a href="{% url 'reservations:assigner_livreur' reservation.pk %}" class="action-btn btn-deliver w-100 mb-2">
+                                <i class="fas fa-truck"></i> Planifier Livraison
+                            </a>
+                        {% else %}
+                            <p class="text-warning mb-0"><i class="fas fa-exclamation-triangle me-2"></i>Employe pas encore saisi etat depart.</p>
+                        {% endif %}
+                    {% elif reservation.delivery_option == 'RETRAIT_AGENCE' %}
+                        <p class="text-white-50 mb-0"><i class="fas fa-building me-2"></i>Retrait agence: aucun livreur ne peut etre assigne.</p>
                     {% endif %}
                 {% endif %}
 
@@ -247,6 +261,33 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 
                 {% comment %} Admin block retained - client prolongation moved to client actions {% endcomment %}
 
+            </div>
+            {% endif %}
+
+            <!-- Employe Actions -->
+            {% if user.is_employe %}
+            <div class="glass-card p-4 mb-4">
+                <h5 class="text-warning mb-4"><i class="fas fa-user-tie me-2"></i>Actions Employe</h5>
+
+                {% if reservation.statut_reservation == 'CONFIRMEE' and not has_etat_depart and reservation.date_debut == today %}
+                    <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}?type=SORTIE" class="action-btn btn-deliver w-100 mb-2">
+                        <i class="fas fa-clipboard-check"></i> Etat depart
+                    </a>
+                {% elif reservation.statut_reservation == 'CONFIRMEE' and not has_etat_depart and reservation.date_debut == tomorrow %}
+                    <a href="{% url 'reservations:etat_des_lieux_create' reservation.pk %}?type=SORTIE" class="action-btn btn-deliver w-100 mb-2">
+                        <i class="fas fa-clipboard-check"></i> Etat depart
+                    </a>
+                {% elif reservation.delivery_option == 'RETRAIT_AGENCE' and reservation.statut_reservation == 'CONFIRMEE' and reservation.date_debut == today and has_etat_depart %}
+                    <a href="{% url 'reservations:reservation_start' reservation.pk %}" class="action-btn btn-start w-100 mb-2">
+                        <i class="fas fa-play"></i> Demarrer
+                    </a>
+                {% elif reservation.delivery_option == 'LIVRAISON_DOMICILE' and reservation.statut_reservation == 'CONFIRMEE' %}
+                    <p class="text-white-50 mb-0">Demarrage gere par le livreur apres livraison au client.</p>
+                {% elif reservation.statut_reservation == 'CONFIRMEE' and reservation.date_debut > today %}
+                    <p class="text-white-50 mb-0">La location pourra etre demarree a la date de depart.</p>
+                {% elif reservation.statut_reservation == 'CONFIRMEE' and not has_etat_depart %}
+                    <p class="text-white-50 mb-0">Etat des lieux de depart requis avant demarrage.</p>
+                {% endif %}
             </div>
             {% endif %}
 
@@ -305,7 +346,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <form method="POST" action="{% url 'reservations:extend_reservation' reservation.pk %}" class="mt-3">
                             {% csrf_token %}
                             <div class="input-group" style="border-radius: 50px; overflow: hidden;">
-                                <input type="date" name="date_fin" class="form-control" min="{{ reservation.date_fin|date:'Y-m-d' }}" value="{{ reservation.date_fin|date:'Y-m-d' }}" required>
+                                <input type="date" name="date_fin" class="form-control" min="{{ prolongation_min_date|date:'Y-m-d' }}" value="{{ prolongation_min_date|date:'Y-m-d' }}" required>
                                 <button type="submit" class="btn btn-warning" style="border-radius: 50px;">
                                     <i class="fas fa-calendar-plus"></i> Demander prolongement
                                 </button>
@@ -313,9 +354,13 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         </form>
                     {% endif %}
                 {% elif reservation.statut_reservation == 'TERMINEE' %}
+                    {% if has_avis %}
+                    <p class="text-success mb-0"><i class="fas fa-check-circle me-2"></i>Votre avis a déjà  été publié pour ce véhicule.</p>
+                    {% else %}
                     <a href="{% url 'reservations:avis_create' reservation.vehicule.pk %}" class="action-btn btn-confirm w-100">
                         <i class="fas fa-star"></i> Laisser un Avis
                     </a>
+                    {% endif %}
                 {% endif %}
             </div>
             {% endif %}

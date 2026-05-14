@@ -146,7 +146,7 @@
     <h1 class="page-title mb-4">Gestion des Réservations</h1>
 
     <form method="get" class="filter-form mb-4">
-        <div class="row align-items-center">
+        <div class="row align-items-end g-3">
             <div class="col-md-4">
                 <label class="text-white-50 small mb-1">Filtrer par statut</label>
                 <select name="statut" class="form-select" onchange="this.form.submit()">
@@ -157,6 +157,18 @@
                     <option value="TERMINEE" {% if request.GET.statut == 'TERMINEE' %}selected{% endif %}>Terminée</option>
                     <option value="ANNULEE" {% if request.GET.statut == 'ANNULEE' %}selected{% endif %}>Annulée</option>
                 </select>
+            </div>
+            <div class="col-md-3">
+                <label class="text-white-50 small mb-1">N reservation</label>
+                <input type="text" name="reference" class="form-control" value="{{ request.GET.reference }}" placeholder="Ex: 5">
+            </div>
+            <div class="col-md-3">
+                <label class="text-white-50 small mb-1">Client</label>
+                <input type="text" name="client" class="form-control" value="{{ request.GET.client }}" placeholder="Nom, username ou email">
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-glass-primary w-100">Filtrer</button>
+                <a href="{% url 'reservations:reservation_list' %}" class="btn btn-glass-secondary">Reset</a>
             </div>
         </div>
     </form>
@@ -170,6 +182,7 @@
                     <th>Véhicule</th>
                     <th>Date début</th>
                     <th>Date fin</th>
+                    <th>Type</th>
                     <th>Montant</th>
                     <th>Statut</th>
                     <th>Actions</th>
@@ -178,11 +191,18 @@
             <tbody>
                 {% for res in page_obj %}
                 <tr>
-                    <td class="fw-bold">{{ res.reference }}</td>
+                    <td class="fw-bold">{{ res.id }}</td>
                     <td>{{ res.client }}</td>
                     <td>{{ res.vehicule }}</td>
                     <td>{{ res.date_debut }}</td>
                     <td>{{ res.date_fin }}</td>
+                    <td>
+                        {% if res.delivery_option == 'LIVRAISON_DOMICILE' %}
+                            <span class="badge-status badge-primary">Livraison</span>
+                        {% else %}
+                            <span class="badge-status badge-success">Agence</span>
+                        {% endif %}
+                    </td>
                     <td class="text-warning fw-semibold">{{ res.montant_total }} MAD</td>
                     <td>
                         <span class="badge-status {% if res.statut_reservation == 'TERMINEE' %}badge-success{% elif res.statut_reservation == 'EN_COURS' %}badge-primary{% elif res.statut_reservation == 'ANNULEE' %}badge-danger{% else %}badge-warning{% endif %}">
@@ -194,10 +214,19 @@
                         {% if res.statut_reservation == 'EN_ATTENTE' %}
                             <a href="{% url 'reservations:reservation_confirm' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Confirmer</a>
                         {% endif %}
+                        {% if res.statut_reservation == 'CONFIRMEE' and res.delivery_option == 'LIVRAISON_DOMICILE' and res.date_debut == today %}
+                            {% if res.has_etat_depart %}
+                                <a href="{% url 'reservations:assigner_livreur' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Assigner livreur</a>
+                            {% else %}
+                                <span class="text-warning small d-block">Employe pas encore saisi etat depart</span>
+                            {% endif %}
+                        {% elif res.statut_reservation == 'CONFIRMEE' and res.delivery_option == 'RETRAIT_AGENCE' %}
+                            <span class="text-white-50 small d-block">Retrait agence</span>
+                        {% endif %}
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-white-50 py-4">Aucune réservation trouvée.</td></tr>
+                <tr><td colspan="9" class="text-center text-white-50 py-4">Aucune réservation trouvée.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
