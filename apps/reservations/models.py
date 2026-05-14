@@ -318,6 +318,8 @@ class Paiement(models.Model):
     mode = models.CharField(_('Mode de paiement'), max_length=20, choices=MODE_CHOICES)
     statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')
     transaction_id = models.CharField(_('ID Transaction'), max_length=100, blank=True)
+    stripe_payment_intent_id = models.CharField(_('Stripe Payment Intent ID'), max_length=255, blank=True)
+    stripe_charge_id = models.CharField(_('Stripe Charge ID'), max_length=255, blank=True)
     date_paiement = models.DateTimeField(_('Date de paiement'), auto_now_add=True)
 
     class Meta:
