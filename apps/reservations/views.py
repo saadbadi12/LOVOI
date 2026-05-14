@@ -961,6 +961,15 @@ def paiement_demander_remboursement(request, pk):
         messages.error(request, 'Accès non autorisé.')
         return redirect('reservations:reservation_detail', pk=paiement.reservation.id)
 
+    # Check 2-day rule for clients (admin can bypass)
+    reservation = paiement.reservation
+    if not request.user.is_admin() and reservation.statut_reservation == 'CONFIRMEE':
+        from datetime import timedelta
+        days_until_start = (reservation.date_debut - timezone.now().date()).days
+        if days_until_start < 2:
+            messages.error(request, 'L\'annulation n\'est possible que 2 jours avant la date de début.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
     if request.method == 'POST':
         if paiement.demander_remboursement():
             messages.success(request, f'Demande de remboursement envoyée. L\'administration traitera votre demande.')
@@ -995,6 +1004,76 @@ def paiement_effectuer_remboursement(request, pk):
         'refund_amount': paiement.calculer_remboursement()
     }
     return render(request, 'reservations/paiement_confirm_refund.html', context)
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin() or u.is_client())
+def partial_cancel(request, pk):
+    """Handle partial cancellation (reduce date_fin from the end only)."""
+    reservation = get_object_or_404(Reservation, pk=pk)
+
+    # Only CONFIRMEE reservations can be partially cancelled
+    if reservation.statut_reservation != 'CONFIRMEE':
+        messages.error(request, 'Seules les réservations confirmées peuvent être annulées partiellement.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    # Only the client or admin can do partial cancel
+    if not (request.user.is_admin() or request.user == reservation.client):
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    if request.method == 'POST':
+        new_date_fin_str = request.POST.get('new_date_fin')
+        if not new_date_fin_str:
+            messages.error(request, 'Date de fin requise.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+        from datetime import date
+        new_date_fin = date.fromisoformat(new_date_fin_str)
+
+        # Validate: new date must be before current date_fin (not equal)
+        if new_date_fin >= reservation.date_fin:
+            messages.error(request, 'La nouvelle date de fin doit être antérieure à la date actuelle.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+        # Validate: new date must be on or after date_debut
+        if new_date_fin < reservation.date_debut:
+            messages.error(request, 'La nouvelle date de fin ne peut pas être avant la date de début.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+        # Calculate how many days we're cancelling from the END
+        old_date_fin = reservation.date_fin
+        days_cancelled = (old_date_fin - new_date_fin).days
+
+        if days_cancelled <= 0:
+            messages.error(request, 'Aucune modification de durée.')
+            return redirect('reservations:reservation_detail', pk=reservation.id)
+
+        # Calculate refund (80% of price for cancelled days)
+        from decimal import Decimal
+        price_per_day = reservation.vehicule.prix_journalier
+        refund_amount = (Decimal(days_cancelled) * price_per_day * Decimal("1.20") * Decimal("0.80")).quantize(Decimal("0.01"))
+
+        # Update the reservation date_fin
+        reservation.date_fin = new_date_fin
+        reservation.save()
+
+        # TODO: Create partial refund payment record if already paid
+        # For now, just notify admin that client requested partial cancellation
+        messages.success(request, f'Durée réduite de {days_cancelled} jour(s). Un remboursement de {refund_amount} MAD sera traité par l\'administration.')
+
+        # Notify admin
+        for admin in Utilisateur.objects.filter(role='ADMIN'):
+            Notification.objects.create(
+                utilisateur=admin,
+                type='RESERVATION',
+                titre='Demande d\'Annulation Partielle',
+                message=f'{request.user} a réduit sa réservation #{reservation.id} de {days_cancelled} jour(s). Montant à rembourser: {refund_amount} MAD.'
+            )
+
+        return redirect('reservations:reservation_detail', pk=reservation.id)
+
+    return redirect('reservations:reservation_detail', pk=reservation.id)
 
 
 @login_required

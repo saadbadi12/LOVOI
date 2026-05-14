@@ -335,13 +335,37 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                     <p class="text-success"><i class="fas fa-check-circle me-2"></i>Réservation confirmée!</p>
                     {% for p in reservation.paiements.all %}
                         {% if p.statut == 'COMPLETE' %}
-                            <a href="{% url 'reservations:paiement_demander_remboursement' p.pk %}" class="action-btn btn-cancel w-100 mt-2">
-                                <i class="fas fa-undo"></i> Annuler ma réservation
-                            </a>
+                            <div class="d-grid gap-2">
+                                {% with date_debut|date:'u' as debut_timestamp %}
+                                {% with date_debut|date:'Y-m-d' as debut_str %}
+                                {% with date_debut|date:'u'|add:"-2" as min_cancel_timestamp %}
+                                {% with "now"|date:"u" as today_timestamp %}
+                                {% if date_debut|date:'u'|add:"-2" <= today_timestamp %}
+                                    <a href="{% url 'reservations:paiement_demander_remboursement' p.pk %}" class="action-btn btn-cancel w-100 mt-2" onclick="return confirm('Êtes-vous sûr de vouloir annuler? Vous recevrez 80% de remboursement (20% de pénalité).');">
+                                        <i class="fas fa-undo"></i> Annuler la réservation (80%remboursement)
+                                    </a>
+                                {% else %}
+                                    <button type="button" class="action-btn btn-cancel w-100 mt-2" disabled title="Annulation possible 2 jours avant la date de début">
+                                        <i class="fas fa-undo"></i> Annuler (disponible 2j avant)
+                                    </button>
+                                {% endif %}
+                                {% endwith %}
+                                {% endwith %}
+                                {% endwith %}
+                                {% endwith %}
+
+                                {% comment %} Partial cancellation: reduce date_fin from end only {% endcomment %}
+                                {% if reservation.paiements.all.count > 0 %}
+                                <button type="button" class="action-btn btn-warning w-100 mt-2" onclick="showPartialCancelModal()">
+                                    <i class="fas fa-calendar-minus"></i> Réduire la durée (annulation partielle)
+                                </button>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     {% endfor %}
                 {% elif reservation.statut_reservation == 'EN_COURS' %}
                     <p class="text-primary"><i class="fas fa-car me-2"></i>Véhicule en cours de location</p>
+                    <p class="text-white-50 small"><i class="fas fa-info-circle me-2"></i>Pour toute modification ou annulation, veuillez contacter l'administration.</p>
                     {% if reservation.vehicule.statut != 'DISPONIBLE' %}
                         <form method="POST" action="{% url 'reservations:extend_reservation' reservation.pk %}" class="mt-3">
                             {% csrf_token %}
@@ -394,5 +418,42 @@ const mapRetour = L.map('map-retour').setView([{{ reservation.latitude_retour|st
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(mapRetour);
 L.marker([{{ reservation.latitude_retour|stringformat:'f' }}, {{ reservation.longitude_retour|stringformat:'f' }}], { icon: pinkIcon }).addTo(mapRetour);
 {% endif %}
+
+// Partial Cancellation Modal
+function showPartialCancelModal() {
+    document.getElementById('partialCancelModal').classList.add('active');
+}
+
+function closePartialCancelModal() {
+    document.getElementById('partialCancelModal').classList.remove('active');
+}
 </script>
+
+<!-- Partial Cancellation Modal -->
+<div class="modal-payment" id="partialCancelModal">
+    <div class="payment-modal-content">
+        <div class="text-center mb-4">
+            <h3 class="text-white fw-bold"><i class="fas fa-calendar-minus me-2 text-warning"></i>Annulation Partielle</h3>
+            <p class="text-white-50 small">Réduisez la durée en annulant les derniers jours. Vous serez remboursé 80% des jours annulés.</p>
+        </div>
+        <form method="post" action="{% url 'reservations:partial_cancel' reservation.pk %}">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="text-white-50 mb-2 small">Date de fin actuelle</label>
+                <input type="text" class="form-control bg-transparent text-white border-0" value="{{ reservation.date_fin|date:'d/m/Y' }}" readonly>
+            </div>
+            <div class="mb-3">
+                <label class="text-white-50 mb-2">Nouvelle date de fin</label>
+                <input type="date" name="new_date_fin" class="card-input" min="{{ reservation.date_debut|date:'Y-m-d' }}" max="{{ reservation.date_fin|date:'Y-m-d' }}" required>
+            </div>
+            <p class="text-warning small"><i class="fas fa-info-circle me-1"></i>Seuls les jours NON ENCORE débutés seront annulés.</p>
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn-pay mb-2">
+                    <i class="fas fa-check me-2"></i>Confirmer l'annulation partielle
+                </button>
+                <button type="button" class="btn btn-outline-light" onclick="closePartialCancelModal()">Annuler</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}

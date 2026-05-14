@@ -52,6 +52,9 @@ urlpatterns = [
     path('paiements/<int:pk>/demander-remboursement/', views.paiement_demander_remboursement, name='paiement_demander_remboursement'),
     path('paiements/<int:pk>/effectuer-remboursement/', views.paiement_effectuer_remboursement, name='paiement_effectuer_remboursement'),
 
+    # Partial Cancel
+    path('<int:pk>/partial-cancel/', views.partial_cancel, name='partial_cancel'),
+
     # PDF Export
     path('contract/<int:reservation_id>/pdf/', views.contract_pdf, name='contract_pdf'),
     path('facture/<int:reservation_id>/pdf/', views.facture_pdf, name='facture_pdf'),
