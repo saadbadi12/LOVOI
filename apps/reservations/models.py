@@ -344,8 +344,8 @@ class Paiement(models.Model):
         return False
 
     def demander_remboursement(self):
-        """Admin requests a refund for this payment."""
-        if self.statut == 'COMPLETE' and self.stripe_charge_id:
+        """Client or admin requests a refund for a payment."""
+        if self.statut == 'COMPLETE':
             self.statut = 'EN_ATTENTE_REMBOURSEMENT'
             self.save()
             return True
