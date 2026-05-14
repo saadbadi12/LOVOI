@@ -877,18 +877,19 @@ def paiement_effectuer_remboursement(request, pk):
             messages.error(request, 'Ce paiement n\'est pas en attente de remboursement.')
             return redirect('reservations:paiement_list')
 
-        if paiement.effectuer_remboursement():
-            # Cancel the associated reservation
-            if paiement.reservation.statut_reservation in ['CONFIRMEE', 'EN_ATTENTE']:
-                paiement.reservation.annuler()
-
-            messages.success(request, f'Remboursement de {paiement.amount} MAD effectué avec succès.')
+        refund_amount = paiement.calculer_remboursement()
+        if paiement.effectuer_remboursement(refund_amount=refund_amount):
+            messages.success(request, f'Remboursement de {refund_amount} MAD effectué avec succès.')
         else:
             messages.error(request, 'Erreur lors du remboursement Stripe. Vérifiez les logs.')
 
         return redirect('reservations:paiement_list')
 
-    return render(request, 'reservations/paiement_confirm_refund.html', {'paiement': paiement})
+    context = {
+        'paiement': paiement,
+        'refund_amount': paiement.calculer_remboursement()
+    }
+    return render(request, 'reservations/paiement_confirm_refund.html', context)
 
 
 @login_required

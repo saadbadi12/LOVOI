@@ -347,7 +347,45 @@ class Paiement(models.Model):
             return True
         return False
 
-    def effectuer_remboursement(self):
+    def calculer_remboursement(self):
+        """
+        Calculate refund amount based on cancellation policy.
+
+        CONFIRMEE (cancel before pickup): 20% penalty on rental price + livreur fee if applicable
+        EN_COURS (cancel during rental): days_used × 10% penalty on rental price + livreur fee if applicable
+        """
+        from decimal import Decimal
+
+        reservation = self.reservation
+        rental_price = reservation.montant_total or Decimal('0.00')
+        livreur_fee = reservation.delivery_fee or Decimal('0.00')
+        delivery_option = reservation.delivery_option
+
+        # Check if livreur was already dispatched (for LIVRAISON)
+        # If status is CONFIRMEE (not started), livreur might not be dispatched
+        # If EN_COURS, livreur was likely dispatched
+        livreur_dispatched = (
+            delivery_option == 'LIVRAISON_DOMICILE' and
+            reservation.statut_reservation == 'EN_COURS'
+        )
+
+        if reservation.statut_reservation == 'EN_COURS':
+            # During rental: penalty = days_used × 10% of rental price
+            days_used = (reservation.date_fin - reservation.date_debut).days - (
+                reservation.date_fin - timezone.now().date()).days
+            days_used = max(days_used, 1)
+            penalty = days_used * Decimal('0.10') * rental_price
+        else:
+            # Before pickup: 20% penalty on rental price only
+            penalty = Decimal('0.20') * rental_price
+
+        # Livreur fee is kept if dispatched (for LIVRAISON during EN_COURS)
+        livreur_to_keep = livreur_fee if livreur_dispatched else Decimal('0.00')
+
+        refund_amount = rental_price + livreur_fee - penalty - livreur_to_keep
+        return max(refund_amount, Decimal('0.00'))
+
+    def effectuer_remboursement(self, refund_amount=None):
         """Process the refund via Stripe."""
         if self.statut == 'EN_ATTENTE_REMBOURSEMENT' and self.stripe_charge_id:
             import stripe
@@ -355,13 +393,24 @@ class Paiement(models.Model):
 
             stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
 
+            # Calculate refund amount if not provided
+            if refund_amount is None:
+                refund_amount = self.calculer_remboursement()
+
             try:
+                # Convert to cents for Stripe
                 refund = stripe.Refund.create(
-                    charge=self.stripe_charge_id
+                    charge=self.stripe_charge_id,
+                    amount=int(float(refund_amount) * 100)
                 )
                 self.statut = 'REMBOURSE'
                 self.stripe_refund_id = refund.id
                 self.save()
+
+                # Cancel the reservation
+                if self.reservation.statut_reservation in ['CONFIRMEE', 'EN_ATTENTE', 'EN_COURS']:
+                    self.reservation.annuler()
+
                 return True
             except Exception as e:
                 return False

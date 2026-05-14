@@ -61,16 +61,19 @@
                     </button>
                 </form>
             {% elif paiement.statut == 'EN_ATTENTE_REMBOURSEMENT' %}
+                {% with refund=paiement.calculer_remboursement %}
                 <div class="alert alert-info">
                     <i class="bi bi-info-circle"></i>
-                    Le remboursement est en attente. Cliquez ci-dessous pour traiter le remboursement via Stripe.
+                    Montant du remboursement calculé: <strong>{{ refund }} MAD</strong>
+                    <br><small>(client {{ paiement.reservation.client.get_full_name|default:paiement.reservation.client.username }})</small>
                 </div>
                 <form method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-warning btn-lg">
-                        <i class="bi bi-credit-card"></i> Effectuer le remboursement via Stripe
+                        <i class="bi bi-credit-card"></i> Effectuer le remboursement de {{ refund }} MAD via Stripe
                     </button>
                 </form>
+                {% endwith %}
             {% elif paiement.statut == 'REMBOURSE' %}
                 <div class="alert alert-success">
                     <i class="bi bi-check-circle"></i>
