@@ -6,7 +6,8 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, D
 from django.urls import reverse_lazy, reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
+from django.utils import timezone
 from .models import Utilisateur, Notification
 from .forms import ClientRegistrationForm, ProfileForm
 from apps.vehicles.models import Vehicule, Categorie
@@ -277,8 +278,18 @@ def dashboard_employe(request):
         date_fin=today,
         statut_reservation='EN_COURS',
     ).select_related('client', 'vehicule').order_by('date_fin')
+    etat_depart_exists = EtatDesLieux.objects.filter(
+        reservation=OuterRef('pk'),
+        type='SORTIE',
+    )
+    etat_retour_exists = EtatDesLieux.objects.filter(
+        reservation=OuterRef('pk'),
+        type='ENTREE',
+    )
     reservations_a_venir = Reservation.objects.filter(
-        date_debut__gt=today,
+        date_debut__gte=today,
+    ).annotate(
+        has_etat_depart=Exists(etat_depart_exists),
     ).select_related('client', 'vehicule').order_by('date_debut')
     reservations_en_cours = Reservation.objects.filter(
         statut_reservation='EN_COURS',
@@ -287,7 +298,33 @@ def dashboard_employe(request):
         statut_reservation='EN_COURS',
         date_fin__gte=today,
         date_fin__lte=tomorrow,
+    ).annotate(
+        has_etat_retour=Exists(etat_retour_exists),
     ).select_related('client', 'vehicule').order_by('date_fin')
+
+    reservation_id = request.GET.get('reservation_id', '').strip()
+    client = request.GET.get('client', '').strip()
+
+    def apply_reservation_filters(queryset):
+        if reservation_id:
+            if reservation_id.isdigit():
+                queryset = queryset.filter(id=int(reservation_id))
+            else:
+                queryset = queryset.none()
+
+        if client:
+            queryset = queryset.filter(
+                Q(client__username__icontains=client)
+                | Q(client__first_name__icontains=client)
+                | Q(client__last_name__icontains=client)
+                | Q(client__email__icontains=client)
+            )
+
+        return queryset
+
+    reservations_a_venir = apply_reservation_filters(reservations_a_venir)
+    reservations_en_cours = apply_reservation_filters(reservations_en_cours)
+    retours_imminents = apply_reservation_filters(retours_imminents)
 
     context = {
         'etats_des_lieux': etats_des_lieux,
@@ -296,17 +333,12 @@ def dashboard_employe(request):
         'reservations_a_venir': reservations_a_venir,
         'reservations_en_cours': reservations_en_cours,
         'retours_imminents': retours_imminents,
+        'reservation_filter_id': reservation_id,
+        'client_filter': client,
+        'today': today,
+        'tomorrow': tomorrow,
         'reservations': list(departs_aujourdhui) + list(retours_aujourdhui),
-        'terminees': etats_des_lieux.count(), # [!code --]
-    } # [!code --]
-    context = { # [!code ++]
-        'etats_des_lieux': etats_des_lieux, # [!code ++]
-        'departs_aujourdhui': departs_aujourdhui, # [!code ++]
-        'retours_aujourdhui': retours_aujourdhui, # [!code ++]
-        'reservations_a_venir': reservations_a_venir, # [!code ++]
-        'reservations_en_cours': reservations_en_cours, # [!code ++]
-        'retours_imminents': retours_imminents, # [!code ++]
-        'terminees': etats_des_lieux.count(), # [!code ++]
+        'terminees': etats_des_lieux.count(),
     }
     return render(request, 'accounts/dashboard_employe.html', context)
 
@@ -337,11 +369,12 @@ def dashboard_technicien(request):
 def dashboard_livreur(request):
     """Livreur dashboard."""
     mes_livraisons = Livraison.objects.filter(
-        livreur=request.user
+        livreur=request.user,
+        reservation__delivery_option='LIVRAISON_DOMICILE',
     ).order_by('-date_livraison')[:10]
-    total = Livraison.objects.filter(livreur=request.user).count()
-    en_cours = Livraison.objects.filter(livreur=request.user, statut='EN_COURS').count()
-    completed = Livraison.objects.filter(livreur=request.user, statut__in=['LIVREE', 'TERMINEE']).count()
+    total = Livraison.objects.filter(livreur=request.user, reservation__delivery_option='LIVRAISON_DOMICILE').count()
+    en_cours = Livraison.objects.filter(livreur=request.user, reservation__delivery_option='LIVRAISON_DOMICILE', statut='EN_COURS').count()
+    completed = Livraison.objects.filter(livreur=request.user, reservation__delivery_option='LIVRAISON_DOMICILE', statut__in=['LIVREE', 'TERMINEE']).count()
     unread = Notification.objects.filter(utilisateur=request.user, lue=False).count()
     context = {
         'livraisons': mes_livraisons,
@@ -428,6 +461,46 @@ def profile(request):
 @login_required
 def notifications(request):
     """User notifications."""
+    if request.user.is_employe():
+        today = timezone.localdate()
+        upcoming_reservations = Reservation.objects.filter(
+            statut_reservation='CONFIRMEE',
+            date_debut__gte=today,
+        ).select_related('client', 'vehicule')
+
+        for reservation in upcoming_reservations:
+            mode = 'Livraison a domicile' if reservation.delivery_option == 'LIVRAISON_DOMICILE' else 'Agence'
+            Notification.objects.get_or_create(
+                utilisateur=request.user,
+                type='RESERVATION',
+                titre=f'Reservation #{reservation.id} a preparer',
+                defaults={
+                    'message': (
+                        f'Reservation {mode} pour {reservation.vehicule} - '
+                        f'client {reservation.client.get_full_name() or reservation.client.username}. '
+                        f'Date depart: {reservation.date_debut}.'
+                    )
+                }
+            )
+
+        retours = Reservation.objects.filter(
+            statut_reservation='EN_COURS',
+            date_fin__gte=today,
+        ).select_related('client', 'vehicule')
+
+        for reservation in retours:
+            Notification.objects.get_or_create(
+                utilisateur=request.user,
+                type='RESERVATION',
+                titre=f'Retour reservation #{reservation.id} a verifier',
+                defaults={
+                    'message': (
+                        f'Retour prevu le {reservation.date_fin} pour {reservation.vehicule} - '
+                        f'client {reservation.client.get_full_name() or reservation.client.username}.'
+                    )
+                }
+            )
+
     notifications = Notification.objects.filter(utilisateur=request.user).order_by('-date_envoi')
     # Mark as read
     notifications.filter(lue=False).update(lue=True)

@@ -403,7 +403,7 @@ body {
                         <tbody>
                             {% for res in recent_reservations %}
                             <tr>
-                                <td><span class="badge bg-secondary">{{ res.reference }}</span></td>
+                                <td><span class="badge bg-secondary">{{ res.id }}</span></td>
                                 <td>{{ res.client.get_full_name }}</td>
                                 <td>{{ res.vehicule.marque }} {{ res.vehicule.modele }}</td>
                                 <td>{{ res.date_debut|date:"d/m" }} - {{ res.date_fin|date:"d/m/y" }}</td>

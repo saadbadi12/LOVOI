@@ -191,7 +191,7 @@
             <tbody>
                 {% for res in page_obj %}
                 <tr>
-                    <td class="fw-bold">{{ res.reference }}</td>
+                    <td class="fw-bold">{{ res.id }}</td>
                     <td>{{ res.client }}</td>
                     <td>{{ res.vehicule }}</td>
                     <td>{{ res.date_debut }}</td>
@@ -215,7 +215,11 @@
                             <a href="{% url 'reservations:reservation_confirm' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Confirmer</a>
                         {% endif %}
                         {% if res.statut_reservation == 'CONFIRMEE' and res.delivery_option == 'LIVRAISON_DOMICILE' and res.date_debut == today %}
-                            <a href="{% url 'reservations:assigner_livreur' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Assigner livreur</a>
+                            {% if res.has_etat_depart %}
+                                <a href="{% url 'reservations:assigner_livreur' res.pk %}" class="btn btn-sm btn-glass-primary mb-1">Assigner livreur</a>
+                            {% else %}
+                                <span class="text-warning small d-block">Employe pas encore saisi etat depart</span>
+                            {% endif %}
                         {% elif res.statut_reservation == 'CONFIRMEE' and res.delivery_option == 'RETRAIT_AGENCE' %}
                             <span class="text-white-50 small d-block">Retrait agence</span>
                         {% endif %}

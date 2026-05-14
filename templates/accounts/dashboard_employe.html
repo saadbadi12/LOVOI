@@ -90,6 +90,28 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     border-radius: 50px;
     font-weight: 600;
 }
+
+.type-badge {
+    padding: 6px 12px;
+    border-radius: 50px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.type-agence {
+    background: rgba(78,205,196,0.2);
+    color: #4ecdc4;
+    border: 1px solid rgba(78,205,196,0.35);
+}
+
+.type-livraison {
+    background: rgba(255,193,7,0.2);
+    color: #ffc107;
+    border: 1px solid rgba(255,193,7,0.35);
+}
 </style>
 {% endblock %}
 
@@ -134,6 +156,23 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
     </div>
 
     <div class="glass-card p-4 mb-5">
+        <form method="get" class="mb-4">
+            <div class="row align-items-end g-3">
+                <div class="col-md-4">
+                    <label class="text-white-50 small mb-1">N reservation</label>
+                    <input type="text" name="reservation_id" class="form-control" value="{{ reservation_filter_id }}" placeholder="Ex: 23">
+                </div>
+                <div class="col-md-5">
+                    <label class="text-white-50 small mb-1">Client</label>
+                    <input type="text" name="client" class="form-control" value="{{ client_filter }}" placeholder="Nom, username ou email">
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+                    <a href="{% url 'accounts:dashboard_employe' %}" class="btn btn-outline-light">Reset</a>
+                </div>
+            </div>
+        </form>
+
         <ul class="nav nav-pills mb-4" id="reservationTabs" role="tablist">
             <li class="nav-item" role="presentation">
                 <button class="nav-link active" id="avenir-tab" data-bs-toggle="pill" data-bs-target="#avenir" type="button" role="tab">
@@ -162,18 +201,46 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 <th>Réservation</th>
                                 <th>Client</th>
                                 <th>Véhicule</th>
+                                <th>Type</th>
                                 <th>Date début</th>
                                 <th>Date fin</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for r in reservations_a_venir %}
                             <tr>
-                                <td class="fw-bold">#{{ r.reference }}</td>
+                                <td class="fw-bold">#{{ r.id }}</td>
                                 <td>{{ r.client.get_full_name|default:r.client.username }}</td>
                                 <td>{{ r.vehicule }}</td>
+                                <td>
+                                    {% if r.delivery_option == 'LIVRAISON_DOMICILE' %}
+                                        <span class="type-badge type-livraison"><i class="fas fa-truck"></i>Livraison</span>
+                                    {% else %}
+                                        <span class="type-badge type-agence"><i class="fas fa-building"></i>Agence</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ r.date_debut|date:"d/m/Y" }}</td>
                                 <td>{{ r.date_fin|date:"d/m/Y" }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'reservations:reservation_detail' r.pk %}" class="btn btn-sm btn-outline-light">Voir</a>
+                                        {% if r.statut_reservation == 'CONFIRMEE' and not r.has_etat_depart and r.date_debut == today %}
+                                            <a href="{% url 'reservations:etat_des_lieux_create' r.pk %}?type=SORTIE" class="btn btn-sm btn-warning">
+                                                Etat depart
+                                            </a>
+                                        {% elif r.statut_reservation == 'CONFIRMEE' and not r.has_etat_depart and r.date_debut == tomorrow %}
+                                            <a href="{% url 'reservations:etat_des_lieux_create' r.pk %}?type=SORTIE" class="btn btn-sm btn-warning">
+                                                Etat depart
+                                            </a>
+                                        {% endif %}
+                                        {% if r.delivery_option == 'RETRAIT_AGENCE' and r.statut_reservation == 'CONFIRMEE' and r.date_debut == today and r.has_etat_depart %}
+                                            <a href="{% url 'reservations:reservation_start' r.pk %}" class="btn btn-sm btn-primary">
+                                                Demarrer
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -192,18 +259,30 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 <th>Réservation</th>
                                 <th>Client</th>
                                 <th>Véhicule</th>
+                                <th>Type</th>
                                 <th>Date début</th>
                                 <th>Date fin</th>
+                                <th></th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for r in reservations_en_cours %}
                             <tr>
-                                <td class="fw-bold">#{{ r.reference }}</td>
+                                <td class="fw-bold">#{{ r.id }}</td>
                                 <td>{{ r.client.get_full_name|default:r.client.username }}</td>
                                 <td>{{ r.vehicule }}</td>
+                                <td>
+                                    {% if r.delivery_option == 'LIVRAISON_DOMICILE' %}
+                                        <span class="type-badge type-livraison"><i class="fas fa-truck"></i>Livraison</span>
+                                    {% else %}
+                                        <span class="type-badge type-agence"><i class="fas fa-building"></i>Agence</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ r.date_debut|date:"d/m/Y" }}</td>
                                 <td>{{ r.date_fin|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'reservations:reservation_detail' r.pk %}" class="btn btn-sm btn-outline-light">Voir</a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -222,6 +301,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 <th>Réservation</th>
                                 <th>Client</th>
                                 <th>Véhicule</th>
+                                <th>Type</th>
                                 <th>Date retour</th>
                                 <th></th>
                             </tr>
@@ -229,14 +309,26 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                         <tbody>
                             {% for r in retours_imminents %}
                             <tr>
-                                <td class="fw-bold">#{{ r.reference }}</td>
+                                <td class="fw-bold">#{{ r.id }}</td>
                                 <td>{{ r.client.get_full_name|default:r.client.username }}</td>
                                 <td>{{ r.vehicule }}</td>
+                                <td>
+                                    {% if r.delivery_option == 'LIVRAISON_DOMICILE' %}
+                                        <span class="type-badge type-livraison"><i class="fas fa-truck"></i>Livraison</span>
+                                    {% else %}
+                                        <span class="type-badge type-agence"><i class="fas fa-building"></i>Agence</span>
+                                    {% endif %}
+                                </td>
                                 <td>{{ r.date_fin|date:"d/m/Y" }}</td>
                                 <td>
-                                    <a href="{% url 'reservations:etat_des_lieux_create' r.pk %}?type=ENTREE" class="btn btn-sm btn-success">
-                                        Vérifier retour
-                                    </a>
+                                    <div class="d-flex gap-2">
+                                        <a href="{% url 'reservations:reservation_detail' r.pk %}" class="btn btn-sm btn-outline-light">Voir</a>
+                                        {% if r.statut_reservation == 'EN_COURS' and r.date_fin == today and not r.has_etat_retour %}
+                                            <a href="{% url 'reservations:etat_des_lieux_create' r.pk %}?type=ENTREE" class="btn btn-sm btn-success">
+                                                Etat retour
+                                            </a>
+                                        {% endif %}
+                                    </div>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -297,9 +389,6 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                 <div class="d-flex flex-column gap-3">
                     <a href="{% url 'reservations:etat_des_lieux_list' %}" class="action-btn action-btn-secondary w-100 justify-content-center">
                         <i class="fas fa-list"></i> Tous les États des Lieux
-                    </a>
-                    <a href="{% url 'reservations:reservation_list' %}" class="action-btn w-100 justify-content-center">
-                        <i class="fas fa-calendar-alt"></i> Toutes les Réservations
                     </a>
                     
                 </div>
