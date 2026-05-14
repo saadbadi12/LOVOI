@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% block title %}Remboursement - LOVOI{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Remboursement - Paiement #{{ paiement.id }}</h1>
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5>Détails du paiement</h5>
+            <table class="table">
+                <tr>
+                    <td><strong>Réservation:</strong></td>
+                    <td>#{{ paiement.reservation.id }} - {{ paiement.reservation.vehicule.marque }} {{ paiement.reservation.vehicule.modele }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Montant:</strong></td>
+                    <td class="text-danger fs-5">{{ paiement.amount }} MAD</td>
+                </tr>
+                <tr>
+                    <td><strong>Mode:</strong></td>
+                    <td>{{ paiement.get_mode_display }}</td>
+                </tr>
+                <tr>
+                    <td><strong>Statut actuel:</strong></td>
+                    <td>
+                        {% if paiement.statut == 'COMPLETE' %}
+                            <span class="badge bg-success">Complète</span>
+                        {% elif paiement.statut == 'EN_ATTENTE_REMBOURSEMENT' %}
+                            <span class="badge bg-warning">En attente remboursement</span>
+                        {% elif paiement.statut == 'REMBOURSE' %}
+                            <span class="badge bg-info">Remboursé</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ paiement.get_statut_display }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Client:</strong></td>
+                    <td>{{ paiement.reservation.client.get_full_name|default:paiement.reservation.client.username }}</td>
+                </tr>
+                {% if paiement.stripe_charge_id %}
+                <tr>
+                    <td><strong>Stripe Charge ID:</strong></td>
+                    <td><code>{{ paiement.stripe_charge_id }}</code></td>
+                </tr>
+                {% endif %}
+            </table>
+
+            <hr>
+
+            {% if paiement.statut == 'COMPLETE' %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Attention:</strong> Cette action annulera également la réservation associée.
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger btn-lg">
+                        <i class="bi bi-arrow-left-right"></i> Demander le remboursement
+                    </button>
+                </form>
+            {% elif paiement.statut == 'EN_ATTENTE_REMBOURSEMENT' %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    Le remboursement est en attente. Cliquez ci-dessous pour traiter le remboursement via Stripe.
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-warning btn-lg">
+                        <i class="bi bi-credit-card"></i> Effectuer le remboursement via Stripe
+                    </button>
+                </form>
+            {% elif paiement.statut == 'REMBOURSE' %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle"></i>
+                    Ce paiement a déjà été remboursé.
+                </div>
+            {% else %}
+                <div class="alert alert-secondary">
+                    Ce paiement ne peut pas être remboursé (statut: {{ paiement.get_statut_display }}).
+                </div>
+            {% endif %}
+
+            <a href="{% url 'reservations:paiement_list' %}" class="btn btn-secondary mt-3">
+                <i class="bi bi-arrow-left"></i> Retour à la liste
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

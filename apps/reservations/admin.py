@@ -37,6 +37,31 @@ class PaiementAdmin(admin.ModelAdmin):
     list_display = ('id', 'reservation', 'type', 'amount', 'mode', 'statut', 'date_paiement')
     list_filter = ('mode', 'statut', 'type')
     raw_id_fields = ('reservation',)
+    actions = ['demander_remboursement', 'effectuer_remboursement']
+
+    @admin.action(description='Demander remboursement')
+    def demander_remboursement(self, request, queryset):
+        count = 0
+        for paiement in queryset.filter(statut='COMPLETE'):
+            if paiement.demander_remboursement():
+                count += 1
+        self.message_user(request, f'{count} remboursement(s) demandé(s).')
+
+    @admin.action(description='Effectuer remboursement via Stripe')
+    def effectuer_remboursement(self, request, queryset):
+        count = 0
+        errors = []
+        for paiement in queryset.filter(statut='EN_ATTENTE_REMBOURSEMENT'):
+            if paiement.effectuer_remboursement():
+                count += 1
+                # Cancel reservation too
+                if paiement.reservation.statut_reservation in ['CONFIRMEE', 'EN_ATTENTE']:
+                    paiement.reservation.annuler()
+            else:
+                errors.append(f'Paiement #{paiement.id}')
+        if errors:
+            self.message_user(request, f'Erreurs pour: {", ".join(errors)}', level='ERROR')
+        self.message_user(request, f'{count} remboursement(s) effectué(s).')
 
 
 @admin.register(Facture)

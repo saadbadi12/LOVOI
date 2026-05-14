@@ -299,6 +299,7 @@ class Paiement(models.Model):
     STATUT_CHOICES = [
         ('EN_ATTENTE', _('En attente')),
         ('COMPLETE', _('Complète')),
+        ('EN_ATTENTE_REMBOURSEMENT', _('En attente remboursement')),
         ('ECHEC', _('Échec')),
         ('REMBOURSE', _('Remboursé')),
     ]
@@ -316,10 +317,11 @@ class Paiement(models.Model):
     type = models.CharField(_('Type'), max_length=30, choices=TYPE_CHOICES, default='TOTAL')
     amount = models.DecimalField(_('Montant (MAD)'), max_digits=10, decimal_places=2)
     mode = models.CharField(_('Mode de paiement'), max_length=20, choices=MODE_CHOICES)
-    statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')
+    statut = models.CharField(_('Statut'), max_length=30, choices=STATUT_CHOICES, default='EN_ATTENTE')
     transaction_id = models.CharField(_('ID Transaction'), max_length=100, blank=True)
     stripe_payment_intent_id = models.CharField(_('Stripe Payment Intent ID'), max_length=255, blank=True)
     stripe_charge_id = models.CharField(_('Stripe Charge ID'), max_length=255, blank=True)
+    stripe_refund_id = models.CharField(_('Stripe Refund ID'), max_length=255, blank=True)
     date_paiement = models.DateTimeField(_('Date de paiement'), auto_now_add=True)
 
     class Meta:
@@ -335,6 +337,34 @@ class Paiement(models.Model):
             self.statut = 'COMPLETE'
             self.save()
             return True
+        return False
+
+    def demander_remboursement(self):
+        """Admin requests a refund for this payment."""
+        if self.statut == 'COMPLETE' and self.stripe_charge_id:
+            self.statut = 'EN_ATTENTE_REMBOURSEMENT'
+            self.save()
+            return True
+        return False
+
+    def effectuer_remboursement(self):
+        """Process the refund via Stripe."""
+        if self.statut == 'EN_ATTENTE_REMBOURSEMENT' and self.stripe_charge_id:
+            import stripe
+            from django.conf import settings
+
+            stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
+
+            try:
+                refund = stripe.Refund.create(
+                    charge=self.stripe_charge_id
+                )
+                self.statut = 'REMBOURSE'
+                self.stripe_refund_id = refund.id
+                self.save()
+                return True
+            except Exception as e:
+                return False
         return False
 
 

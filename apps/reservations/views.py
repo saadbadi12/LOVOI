@@ -851,6 +851,47 @@ def paiement_list(request):
 
 
 @login_required
+@user_passes_test(lambda u: u.is_admin())
+def paiement_demander_remboursement(request, pk):
+    """Admin requests a refund for a payment."""
+    paiement = get_object_or_404(Paiement, pk=pk)
+
+    if request.method == 'POST':
+        if paiement.demander_remboursement():
+            messages.success(request, f'Demande de remboursement créée pour {paiement.amount} MAD.')
+        else:
+            messages.error(request, 'Impossible de demander un remboursement pour ce paiement.')
+        return redirect('reservations:paiement_list')
+
+    return render(request, 'reservations/paiement_confirm_refund.html', {'paiement': paiement})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin())
+def paiement_effectuer_remboursement(request, pk):
+    """Admin processes (executes) the refund via Stripe."""
+    paiement = get_object_or_404(Paiement, pk=pk)
+
+    if request.method == 'POST':
+        if paiement.statut != 'EN_ATTENTE_REMBOURSEMENT':
+            messages.error(request, 'Ce paiement n\'est pas en attente de remboursement.')
+            return redirect('reservations:paiement_list')
+
+        if paiement.effectuer_remboursement():
+            # Cancel the associated reservation
+            if paiement.reservation.statut_reservation in ['CONFIRMEE', 'EN_ATTENTE']:
+                paiement.reservation.annuler()
+
+            messages.success(request, f'Remboursement de {paiement.amount} MAD effectué avec succès.')
+        else:
+            messages.error(request, 'Erreur lors du remboursement Stripe. Vérifiez les logs.')
+
+        return redirect('reservations:paiement_list')
+
+    return render(request, 'reservations/paiement_confirm_refund.html', {'paiement': paiement})
+
+
+@login_required
 @user_passes_test(lambda u: u.is_admin() or u.is_client())
 def paiement_create(request, reservation_id):
     reservation = get_object_or_404(Reservation, pk=reservation_id)
