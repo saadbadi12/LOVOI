@@ -301,7 +301,7 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
 
             {% endcomment %}
             <!-- Signature Section -->
-            <form method="post" id="contract-form" action="{% url 'reservations:process_payment' vehicule.id %}">
+            <form method="post" id="contract-form" action="{% url 'reservations:contract_sign_process' vehicule.id %}">
                 {% csrf_token %}
 
                 <div class="glass-card p-4 mb-4 text-center">
