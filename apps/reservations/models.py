@@ -275,12 +275,16 @@ class Livraison(models.Model):
         return f"Livraison {self.id} - {self.reservation}"
 
     def trigger_refund(self):
-        """When livraison fails, automatically refund the client."""
+        """When livraison fails (livreur cancels), refund full amount to client."""
         if self.statut == 'ECHEC' and self.motif_echec:
+            reservation = self.reservation
+            # Full refund including livreur fee when livreur cancels
+            total_to_refund = (reservation.montant_total or Decimal('0.00')) + (reservation.delivery_fee or Decimal('0.00'))
+
             Paiement.objects.create(
-                reservation=self.reservation,
+                reservation=reservation,
                 type='REMBOURSEMENT',
-                amount=self.reservation.montant_total,
+                amount=total_to_refund,
                 mode='CARTE_BANCAIRE',
                 statut='COMPLETE',
                 transaction_id=f'REFUND-LIVraison-{self.id}'
@@ -299,6 +303,7 @@ class Paiement(models.Model):
     STATUT_CHOICES = [
         ('EN_ATTENTE', _('En attente')),
         ('COMPLETE', _('Complète')),
+        ('EN_ATTENTE_REMBOURSEMENT', _('En attente remboursement')),
         ('ECHEC', _('Échec')),
         ('REMBOURSE', _('Remboursé')),
     ]
@@ -316,8 +321,11 @@ class Paiement(models.Model):
     type = models.CharField(_('Type'), max_length=30, choices=TYPE_CHOICES, default='TOTAL')
     amount = models.DecimalField(_('Montant (MAD)'), max_digits=10, decimal_places=2)
     mode = models.CharField(_('Mode de paiement'), max_length=20, choices=MODE_CHOICES)
-    statut = models.CharField(_('Statut'), max_length=20, choices=STATUT_CHOICES, default='EN_ATTENTE')
+    statut = models.CharField(_('Statut'), max_length=30, choices=STATUT_CHOICES, default='EN_ATTENTE')
     transaction_id = models.CharField(_('ID Transaction'), max_length=100, blank=True)
+    stripe_payment_intent_id = models.CharField(_('Stripe Payment Intent ID'), max_length=255, blank=True)
+    stripe_charge_id = models.CharField(_('Stripe Charge ID'), max_length=255, blank=True)
+    stripe_refund_id = models.CharField(_('Stripe Refund ID'), max_length=255, blank=True)
     date_paiement = models.DateTimeField(_('Date de paiement'), auto_now_add=True)
 
     class Meta:
@@ -333,6 +341,83 @@ class Paiement(models.Model):
             self.statut = 'COMPLETE'
             self.save()
             return True
+        return False
+
+    def demander_remboursement(self):
+        """Client or admin requests a refund for a payment."""
+        if self.statut == 'COMPLETE':
+            self.statut = 'EN_ATTENTE_REMBOURSEMENT'
+            self.save()
+            return True
+        return False
+
+    def calculer_remboursement(self):
+        """
+        Calculate refund amount based on cancellation policy.
+
+        CONFIRMEE (cancel before pickup): 20% penalty on rental price + livreur fee if applicable
+        EN_COURS (cancel during rental): days_used × 10% penalty on rental price + livreur fee if applicable
+        """
+        from decimal import Decimal
+
+        reservation = self.reservation
+        rental_price = reservation.montant_total or Decimal('0.00')
+        livreur_fee = reservation.delivery_fee or Decimal('0.00')
+        delivery_option = reservation.delivery_option
+
+        # Check if livreur was already dispatched (for LIVRAISON)
+        # If status is CONFIRMEE (not started), livreur might not be dispatched
+        # If EN_COURS, livreur was likely dispatched
+        livreur_dispatched = (
+            delivery_option == 'LIVRAISON_DOMICILE' and
+            reservation.statut_reservation == 'EN_COURS'
+        )
+
+        if reservation.statut_reservation == 'EN_COURS':
+            # During rental: penalty = days_used × 10% of rental price
+            days_used = (reservation.date_fin - reservation.date_debut).days - (
+                reservation.date_fin - timezone.now().date()).days
+            days_used = max(days_used, 1)
+            penalty = days_used * Decimal('0.10') * rental_price
+        else:
+            # Before pickup: 20% penalty on rental price only
+            penalty = Decimal('0.20') * rental_price
+
+        # Livreur fee is kept if dispatched (for LIVRAISON during EN_COURS)
+        livreur_to_keep = livreur_fee if livreur_dispatched else Decimal('0.00')
+
+        refund_amount = rental_price + livreur_fee - penalty - livreur_to_keep
+        return max(refund_amount, Decimal('0.00'))
+
+    def effectuer_remboursement(self, refund_amount=None):
+        """Process the refund via Stripe."""
+        if self.statut == 'EN_ATTENTE_REMBOURSEMENT' and self.stripe_charge_id:
+            import stripe
+            from django.conf import settings
+
+            stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
+
+            # Calculate refund amount if not provided
+            if refund_amount is None:
+                refund_amount = self.calculer_remboursement()
+
+            try:
+                # Convert to cents for Stripe
+                refund = stripe.Refund.create(
+                    charge=self.stripe_charge_id,
+                    amount=int(float(refund_amount) * 100)
+                )
+                self.statut = 'REMBOURSE'
+                self.stripe_refund_id = refund.id
+                self.save()
+
+                # Cancel the reservation
+                if self.reservation.statut_reservation in ['CONFIRMEE', 'EN_ATTENTE', 'EN_COURS']:
+                    self.reservation.annuler()
+
+                return True
+            except Exception as e:
+                return False
         return False
 
 

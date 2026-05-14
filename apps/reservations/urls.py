@@ -49,6 +49,14 @@ urlpatterns = [
     # Paiements
     path('paiements/', views.paiement_list, name='paiement_list'),
     path('paiements/<int:reservation_id>/', views.paiement_create, name='paiement_create'),
+    path('paiements/<int:pk>/demander-remboursement/', views.paiement_demander_remboursement, name='paiement_demander_remboursement'),
+    path('paiements/<int:pk>/effectuer-remboursement/', views.paiement_effectuer_remboursement, name='paiement_effectuer_remboursement'),
+
+    # Partial Cancel
+    path('<int:pk>/partial-cancel/', views.partial_cancel, name='partial_cancel'),
+
+    # Livreur probleme signal
+    path('<int:pk>/signaler-probleme/', views.signaler_probleme, name='signaler_probleme'),
 
     # PDF Export
     path('contract/<int:reservation_id>/pdf/', views.contract_pdf, name='contract_pdf'),
