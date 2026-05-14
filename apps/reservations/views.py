@@ -851,17 +851,21 @@ def paiement_list(request):
 
 
 @login_required
-@user_passes_test(lambda u: u.is_admin())
 def paiement_demander_remboursement(request, pk):
-    """Admin requests a refund for a payment."""
+    """Client or admin requests a refund for a payment."""
     paiement = get_object_or_404(Paiement, pk=pk)
+
+    # Check if user is admin OR owns the reservation
+    if not (request.user.is_admin() or request.user == paiement.reservation.client):
+        messages.error(request, 'Accès non autorisé.')
+        return redirect('reservations:reservation_detail', pk=paiement.reservation.id)
 
     if request.method == 'POST':
         if paiement.demander_remboursement():
-            messages.success(request, f'Demande de remboursement créée pour {paiement.amount} MAD.')
+            messages.success(request, f'Demande de remboursement envoyée. L\'administration traitera votre demande.')
         else:
             messages.error(request, 'Impossible de demander un remboursement pour ce paiement.')
-        return redirect('reservations:paiement_list')
+        return redirect('reservations:reservation_detail', pk=paiement.reservation.id)
 
     return render(request, 'reservations/paiement_confirm_refund.html', {'paiement': paiement})
 
