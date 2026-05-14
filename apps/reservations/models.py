@@ -275,12 +275,16 @@ class Livraison(models.Model):
         return f"Livraison {self.id} - {self.reservation}"
 
     def trigger_refund(self):
-        """When livraison fails, automatically refund the client."""
+        """When livraison fails (livreur cancels), refund full amount to client."""
         if self.statut == 'ECHEC' and self.motif_echec:
+            reservation = self.reservation
+            # Full refund including livreur fee when livreur cancels
+            total_to_refund = (reservation.montant_total or Decimal('0.00')) + (reservation.delivery_fee or Decimal('0.00'))
+
             Paiement.objects.create(
-                reservation=self.reservation,
+                reservation=reservation,
                 type='REMBOURSEMENT',
-                amount=self.reservation.montant_total,
+                amount=total_to_refund,
                 mode='CARTE_BANCAIRE',
                 statut='COMPLETE',
                 transaction_id=f'REFUND-LIVraison-{self.id}'

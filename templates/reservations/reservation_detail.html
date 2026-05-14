@@ -201,7 +201,18 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
                                 <td>{{ p.get_type_display }}</td>
                                 <td class="fw-bold">{{ p.amount }} MAD</td>
                                 <td>{{ p.get_mode_display }}</td>
-                                <td><span class="badge bg-{% if p.statut == 'COMPLETE' %}success{% else %}warning{% endif %}">{{ p.get_statut_display }}</span></td>
+                                <td><span class="badge bg-{% if p.statut == 'COMPLETE' %}success{% elif p.statut == 'REMBOURSE' %}info{% elif p.statut == 'EN_ATTENTE_REMBOURSEMENT' %}warning{% else %}secondary{% endif %}">{{ p.get_statut_display }}</span></td>
+                                <td>
+                                    {% if p.statut == 'COMPLETE' %}
+                                        <a href="{% url 'reservations:paiement_demander_remboursement' p.pk %}" class="btn btn-sm btn-danger">
+                                            <i class="fas fa-undo"></i> Demander remboursement
+                                        </a>
+                                    {% elif p.statut == 'EN_ATTENTE_REMBOURSEMENT' and user.is_admin %}
+                                        <a href="{% url 'reservations:paiement_effectuer_remboursement' p.pk %}" class="btn btn-sm btn-warning">
+                                            <i class="fas fa-check"></i> Traiter
+                                        </a>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
