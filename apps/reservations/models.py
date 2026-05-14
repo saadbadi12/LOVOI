@@ -85,9 +85,10 @@ class Reservation(models.Model):
         if not self.vehicule_id or not self.date_debut or not self.date_fin:
             return False
 
+        # Only check CONFIRMEE and EN_COURS for overlap (EN_ATTENTE reservations are pending payments that may be abandoned)
         reservations = Reservation.objects.filter(
             vehicule=self.vehicule,
-            statut_reservation__in=['EN_ATTENTE', 'CONFIRMEE', 'EN_COURS'],
+            statut_reservation__in=['CONFIRMEE', 'EN_COURS'],
             date_debut__lt=self.date_fin,
             date_fin__gt=self.date_debut,
         )
