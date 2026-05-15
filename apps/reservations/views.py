@@ -231,6 +231,8 @@ def process_payment(request, vehicle_id):
     import stripe
     from django.conf import settings
 
+    stripe.api_key = settings.STRIPE_SECRET_KEY
+
     vehicule = get_object_or_404(Vehicule, pk=vehicle_id)
 
     if 'reservation_data' not in request.session:
