@@ -57,6 +57,15 @@
         border-radius: 20px 20px 0 0;
         object-fit: cover;
     }
+    .card-slide {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        transition: opacity 0.5s ease;
+    }
+    .card-dot.active {
+        background: #ff6b6b !important;
+    }
     .badge-coral {
         background: rgba(255,107,107,0.2);
         color: #ff6b6b;
@@ -240,6 +249,19 @@
             <div class="card glass-card vehicle-card h-100 overflow-hidden">
                 {% if vehicule.photo %}
                     <img src="{{ vehicule.photo.url }}" class="card-img-top" style="height: 220px; object-fit: cover;" alt="{{ vehicule }}">
+                {% elif vehicule.photos.all %}
+                    {% with vehicule.photos.all as vphotos %}
+                    <div class="position-relative" style="height:220px;overflow:hidden;">
+                        {% for p in vphotos %}
+                        <img src="{{ p.photo.url }}" class="card-img-top card-slide{% if forloop.first %} active{% endif %}" style="height:220px;object-fit:cover;{% if forloop.first %}display:block{% else %}display:none{% endif %}" alt="{{ vehicule }}">
+                        {% endfor %}
+                        {% if vphotos|length > 1 %}
+                        <div class="card-dots" style="position:absolute;bottom:8px;left:50%;transform:translateX(-50%);display:flex;gap:4px;">
+                            {% for p in vphotos %}<span class="card-dot{% if forloop.first %} active{% endif %}" style="width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.5);cursor:pointer;"></span>{% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endwith %}
                 {% else %}
                     <div class="no-image-placeholder">
                         <i class="fas fa-car fa-3x"></i>
@@ -336,4 +358,22 @@
     </nav>
     {% endif %}
 </div>
+
+<script>
+document.querySelectorAll('.vehicle-card').forEach(card => {
+    const slides = card.querySelectorAll('.card-slide');
+    const dots = card.querySelectorAll('.card-dot');
+    if (slides.length <= 1) return;
+    let idx = 0;
+    setInterval(() => {
+        slides[idx].style.display = 'none';
+        slides[idx].classList.remove('active');
+        if (dots[idx]) dots[idx].classList.remove('active');
+        idx = (idx + 1) % slides.length;
+        slides[idx].style.display = 'block';
+        slides[idx].classList.add('active');
+        if (dots[idx]) dots[idx].classList.add('active');
+    }, 3000);
+});
+</script>
 {% endblock %}

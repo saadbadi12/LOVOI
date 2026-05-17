@@ -215,6 +215,33 @@
                         </div>
                     </div>
 
+                    {% if vehicule %}
+                    <div class="mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h5 class="text-warning mb-3"><i class="fas fa-images me-2"></i>Photos du véhicule</h5>
+                        {% with vehicule.photos.all as vehicle_photos %}
+                        {% if vehicle_photos %}
+                        <div class="row g-3 mb-3">
+                            {% for photo in vehicle_photos %}
+                            <div class="col-4 col-md-3">
+                                <div class="glass-card p-2 position-relative">
+                                    <img src="{{ photo.photo.url }}" class="img-fluid rounded" style="height: 100px; object-fit: cover; width: 100%;">
+                                    {% if photo.titre %}
+                                    <small class="d-block text-white-50 text-center mt-1 text-truncate">{{ photo.titre }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% else %}
+                        <p class="text-white-50">Aucune photo supplémentaire.</p>
+                        {% endif %}
+                        {% endwith %}
+                        <a href="{% url 'vehicles:vehicle_photo_add' vehicule.pk %}" class="btn btn-glass-teal mt-2">
+                            <i class="fas fa-plus me-2"></i>Ajouter une photo
+                        </a>
+                    </div>
+                    {% endif %}
+
                     <div class="d-flex justify-content-between align-items-center mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
                         <a href="{% url 'vehicles:vehicle_list' %}" class="btn btn-glass-teal">
                             <i class="fas fa-arrow-left me-2"></i>Retour

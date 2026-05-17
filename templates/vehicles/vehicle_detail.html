@@ -167,6 +167,86 @@
         border-radius: 20px;
         color: rgba(255,255,255,0.4);
     }
+
+    /* Photo Slider */
+    .photo-slider {
+        position: relative;
+        border-radius: 20px;
+        overflow: hidden;
+    }
+    .slider-container {
+        position: relative;
+        width: 100%;
+        height: 450px;
+        background: rgba(0,0,0,0.3);
+        border-radius: 20px;
+    }
+    .slide {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        transition: opacity 0.6s ease-in-out;
+        object-fit: cover;
+        display: block;
+    }
+    .slide.active {
+        opacity: 1;
+    }
+    .slider-dots {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 10;
+    }
+    .slider-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.4);
+        cursor: pointer;
+        transition: all 0.3s;
+        border: none;
+    }
+    .slider-dot.active {
+        background: #ff6b6b;
+        transform: scale(1.2);
+    }
+    .slider-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        background: rgba(0,0,0,0.5);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 44px;
+        height: 44px;
+        cursor: pointer;
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.3s;
+    }
+    .slider-arrow:hover { background: rgba(255,107,107,0.8); }
+    .slider-arrow.prev { left: 16px; }
+    .slider-arrow.next { right: 16px; }
+    .slide-counter {
+        position: absolute;
+        top: 14px;
+        right: 16px;
+        background: rgba(0,0,0,0.6);
+        color: white;
+        padding: 6px 14px;
+        border-radius: 30px;
+        font-size: 0.85rem;
+        z-index: 10;
+    }
 </style>
 {% endblock %}
 
@@ -182,16 +262,37 @@
 
     <div class="row g-4">
         <div class="col-lg-6">
-            {% if vehicule.photo %}
-                <img src="{{ vehicule.photo.url }}" class="vehicle-image shadow" alt="{{ vehicule }}">
-            {% else %}
-                <div class="image-placeholder">
-                    <div class="text-center">
-                        <i class="fas fa-car fa-5x mb-3"></i>
-                        <p>Pas d'image disponible</p>
-                    </div>
+            {% with vehicule.photos.all as all_photos %}
+            {% if all_photos %}
+            <div class="photo-slider slider-container" id="photoSlider">
+                {% for photo in all_photos %}
+                <img src="{{ photo.photo.url }}"
+                     class="slide{% if forloop.first %} active{% endif %}"
+                     id="slide-{{ forloop.counter0 }}"
+                     alt="{{ photo.titre|default:vehicule }}"
+                     style="{% if not forloop.first %}display:none;{% else %}display:block;{% endif %}">
+                {% endfor %}
+
+                <span class="slide-counter" id="slideCounter">1 / {{ all_photos|length }}</span>
+
+                <button class="slider-arrow prev" onclick="changeSlide(-1)"><i class="fas fa-chevron-left"></i></button>
+                <button class="slider-arrow next" onclick="changeSlide(1)"><i class="fas fa-chevron-right"></i></button>
+
+                <div class="slider-dots" id="sliderDots">
+                    {% for photo in all_photos %}<button class="slider-dot{% if forloop.first %} active{% endif %}" onclick="goToSlide({{ forloop.counter0 }})"></button>{% endfor %}
                 </div>
+            </div>
+            {% elif vehicule.photo %}
+            <img src="{{ vehicule.photo.url }}" class="vehicle-image shadow" alt="{{ vehicule }}">
+            {% else %}
+            <div class="image-placeholder">
+                <div class="text-center">
+                    <i class="fas fa-car fa-5x mb-3"></i>
+                    <p>Pas d'image disponible</p>
+                </div>
+            </div>
             {% endif %}
+            {% endwith %}
         </div>
         <div class="col-lg-6">
             <div class="glass-card p-4 h-100">
@@ -266,6 +367,9 @@
                     <a href="{% url 'vehicles:vehicle_update' vehicule.pk %}" class="btn btn-glass-teal flex-grow-1">
                         <i class="fas fa-edit me-2"></i>Modifier
                     </a>
+                    <a href="{% url 'vehicles:vehicle_photo_add' vehicule.pk %}" class="btn btn-glass-teal flex-grow-1">
+                        <i class="fas fa-images me-2"></i>Photos
+                    </a>
                     <a href="{% url 'vehicles:vehicle_delete' vehicule.pk %}" class="btn btn-glass flex-grow-1">
                         <i class="fas fa-trash me-2"></i>Supprimer
                     </a>
@@ -328,4 +432,33 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+let currentSlide = 0;
+const totalSlides = {{ vehicule.photos.all|length }};
+
+function goToSlide(n) {
+    const slides = document.querySelectorAll('.slide');
+    const dots = document.querySelectorAll('.slider-dot');
+    currentSlide = n;
+    slides.forEach((s, i) => {
+        s.classList.toggle('active', i === n);
+        s.style.display = (i === n) ? 'block' : 'none';
+    });
+    dots.forEach((d, i) => d.classList.toggle('active', i === n));
+    document.getElementById('slideCounter').textContent = (n + 1) + ' / ' + totalSlides;
+}
+
+function changeSlide(dir) {
+    let next = currentSlide + dir;
+    if (next < 0) next = totalSlides - 1;
+    if (next >= totalSlides) next = 0;
+    goToSlide(next);
+}
+
+// Auto-advance every 4 seconds (only if more than 1 slide)
+if (totalSlides > 1) {
+    setInterval(() => changeSlide(1), 4000);
+}
+</script>
 {% endblock %}

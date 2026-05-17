@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+{% block title %}Ajouter Photo - LOVOI{% endblock %}
+
+{% block extra_css %}
+<style>
+    body {
+        background: linear-gradient(135deg, #1a1a2e, #0f0f1a);
+        min-height: 100vh;
+    }
+    .glass-card {
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 20px;
+    }
+    .form-label {
+        color: rgba(255,255,255,0.9);
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+    .form-control-glass {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        color: white;
+        border-radius: 12px;
+        padding: 14px 18px;
+        transition: all 0.3s ease;
+    }
+    .form-control-glass:focus {
+        background: rgba(255,255,255,0.08);
+        border-color: #4ecdc4;
+        box-shadow: 0 0 0 3px rgba(78,205,196,0.2);
+        color: white;
+        outline: none;
+    }
+    .form-control-glass::placeholder { color: rgba(255,255,255,0.4); }
+    .btn-glass {
+        background: rgba(255,107,107,0.2);
+        color: #ff6b6b;
+        border: 1px solid rgba(255,107,107,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass:hover {
+        background: #ff6b6b;
+        color: #1a1a2e;
+        transform: translateY(-2px);
+    }
+    .btn-glass-teal {
+        background: rgba(78,205,196,0.2);
+        color: #4ecdc4;
+        border: 1px solid rgba(78,205,196,0.4);
+        transition: all 0.3s ease;
+        padding: 14px 32px;
+        border-radius: 12px;
+        font-weight: 600;
+    }
+    .btn-glass-teal:hover {
+        background: #4ecdc4;
+        color: #1a1a2e;
+    }
+    h1, h2 { color: white; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6">
+            <div class="text-center mb-4">
+                <h1 class="mb-2">Ajouter Photo</h1>
+                <p class="text-muted">{{ vehicule.marque }} {{ vehicule.modele }} ({{ vehicule.immatriculation }})</p>
+            </div>
+
+            <div class="glass-card p-4 p-md-5">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label">{{ form.photo.label }} <span style="color:#ff6b6b;">*</span></label>
+                        <div class="glass-card p-4 text-center" style="border: 2px dashed rgba(255,255,255,0.2);">
+                            {{ form.photo }}
+                            <div class="help-text mt-2" style="color: rgba(255,255,255,0.4); font-size: 0.85rem;">
+                                <i class="fas fa-cloud-upload-alt me-1"></i>Formats: JPG, PNG, WebP. Taille max: 5MB
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label">{{ form.titre.label }}</label>
+                        <input type="text" name="titre" class="form-control form-control-glass w-100" placeholder="Ex: Vue arrière, Intérieur..." maxlength="100">
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-5 pt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
+                        <a href="{% url 'vehicles:vehicle_update' vehicule.pk %}" class="btn btn-glass-teal">
+                            <i class="fas fa-arrow-left me-2"></i>Retour
+                        </a>
+                        <button type="submit" class="btn btn-glass">
+                            <i class="fas fa-upload me-2"></i>Ajouter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

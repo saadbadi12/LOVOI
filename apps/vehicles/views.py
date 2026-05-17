@@ -7,7 +7,7 @@ from django.http import HttpResponse
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from .models import Vehicule, Categorie, Maintenance, Document
-from .forms import VehiculeForm, MaintenanceForm, DocumentForm, CategorieForm
+from .forms import VehiculeForm, VehiculePhotoForm, MaintenanceForm, DocumentForm, CategorieForm
 from apps.reservations.models import Reservation
 
 
@@ -163,6 +163,24 @@ def vehicle_delete(request, pk):
         messages.success(request, 'Véhicule supprimé!')
         return redirect('vehicles:vehicle_list')
     return render(request, 'vehicles/vehicle_confirm_delete.html', {'vehicule': vehicule})
+
+
+@login_required
+@user_passes_test(lambda u: u.is_admin())
+def vehicle_photo_add(request, pk):
+    """Add photos to a vehicle."""
+    vehicule = get_object_or_404(Vehicule, pk=pk)
+    if request.method == 'POST':
+        form = VehiculePhotoForm(request.POST, request.FILES)
+        if form.is_valid():
+            photo = form.save(commit=False)
+            photo.vehicule = vehicule
+            photo.save()
+            messages.success(request, 'Photo ajoutée avec succès!')
+            return redirect('vehicles:vehicle_update', pk=vehicule.pk)
+    else:
+        form = VehiculePhotoForm()
+    return render(request, 'vehicles/vehicle_photo_form.html', {'form': form, 'vehicule': vehicule})
 
 
 # ==================== MAINTENANCE ====================

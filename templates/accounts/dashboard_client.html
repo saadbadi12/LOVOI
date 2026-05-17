@@ -152,7 +152,10 @@ body { background: linear-gradient(135deg, #1a1a2e, #0f0f1a); min-height: 100vh;
             <i class="fas fa-car"></i> Réserver un véhicule
         </a>
         <a href="{% url 'reservations:my_reservations' %}" class="action-btn">
-            <i class="fas fa-list"></i> Toutes mes réservations
+            <i class="fas fa-list"></i> Mes Réservations
+        </a>
+        <a href="{% url 'reservations:my_paiements' %}" class="action-btn">
+            <i class="fas fa-credit-card"></i> Mes Paiements
         </a>
     </div>
 
