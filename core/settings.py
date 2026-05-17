@@ -2,16 +2,17 @@
 Django settings for LOVOI_2 Car Rental Agency - Full Implementation.
 """
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
 from pathlib import Path
 import os
-STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
-STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLISHABLE_KEY")
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Load .env from project root (explicit path to avoid ambiguity)
+load_dotenv(BASE_DIR / '.env')
+
+STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
+STRIPE_PUBLISHABLE_KEY = os.getenv("STRIPE_PUBLIC_KEY")
 
 SECRET_KEY = 'django-insecure-lovoi2-full-2024-change-in-production'
 
@@ -106,6 +107,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Delivery fee calculation defaults.
 AGENCY_ADDRESS = 'Casablanca, Morocco'
+AGENCY_PHONE = '+212 6 12 34 56 78'
 AGENCY_LATITUDE = 33.5731
 AGENCY_LONGITUDE = -7.5898
 DELIVERY_PRICE_PER_KM = '5.00'

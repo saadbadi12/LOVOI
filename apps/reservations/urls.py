@@ -21,6 +21,7 @@ urlpatterns = [
     path('<int:pk>/', views.reservation_detail, name='reservation_detail'),
     path('<int:pk>/prolonger/', views.demander_prolongation, name='demander_prolongation'),
     path('my/', views.my_reservations, name='my_reservations'),
+    path('my/paiements/', views.my_paiements, name='my_paiements'),
     path('avis/<int:vehicle_id>/', views.avis_create, name='avis_create'),
 
     # Admin management

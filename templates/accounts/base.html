@@ -365,6 +365,7 @@
                     {% elif request.user.is_client %}
                         <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_client' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
                         <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:my_reservations' %}"><i class="fas fa-book me-1"></i> Mes Réservations</a></li>
+                        <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:my_paiements' %}"><i class="fas fa-credit-card me-1"></i> Mes Paiements</a></li>
                     {% elif request.user.is_employe %}
                         <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'accounts:dashboard_employe' %}"><i class="fas fa-tachometer-alt me-1"></i> Mon Espace</a></li>
                         <li class="nav-item"><a class="nav-link glass-nav-link" href="{% url 'reservations:etat_des_lieux_list' %}"><i class="fas fa-clipboard-check me-1"></i> États des Lieux</a></li>
