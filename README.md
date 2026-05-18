@@ -180,4 +180,4 @@ python manage.py shell
 
 ## Licence
 
-Projet scolaire EMSI 2024
+Projet scolaire EMSI 2026
